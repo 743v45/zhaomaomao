@@ -4,7 +4,7 @@
   "outputName": "wechatgame",
   "packages": {
     "wechatgame": {
-      "appid": "wx6ac3f5090a6b99c5",
+      "appid": "wx57df7bdf510f0b1c",
       "orientation": "portrait",
       "separateEngine": true
     }

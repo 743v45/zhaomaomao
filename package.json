@@ -2,7 +2,7 @@
   "name": "zhaomaomao",
   "version": "1.0.0",
   "private": true,
-  "description": "猫棋（猫咪拼图）— 每行每列各一只猫的色块逻辑谜题，网页版 + 微信小程序双端同步",
+  "description": "\u732b\u68cb\uff08\u732b\u54aa\u62fc\u56fe\uff09\u2014 \u6bcf\u884c\u6bcf\u5217\u5404\u4e00\u53ea\u732b\u7684\u8272\u5757\u903b\u8f91\u8c1c\u9898\uff0c\u7f51\u9875\u7248 + \u5fae\u4fe1\u5c0f\u7a0b\u5e8f\u53cc\u7aef\u540c\u6b65",
   "scripts": {
     "test": "node --test engine/test/engine.test.js engine/test/mp-game.test.js",
     "gen": "node engine/cli.js gen",
@@ -12,7 +12,7 @@
     "docs": "node engine/cli.js docs && node engine/cli.js index",
     "build": "node engine/cli.js build",
     "build-cocos": "node engine/cli.js build-cocos",
-    "build-cocos-web": "~/Applications/CocosCreator.app/Contents/MacOS/CocosCreator --project \"$PWD/cocos\" --build \"platform=web-mobile;debug=true\"",
+    "build-cocos-web": "~/Applications/CocosCreator.app/Contents/MacOS/CocosCreator --project \"$PWD/cocos\" --build \"platform=web-mobile;debug=false\"",
     "cocos-smoke": "node scripts/cocos-smoke.mjs",
     "serve": "python3 -m http.server 8137",
     "web-smoke": "node scripts/web-smoke.mjs",
