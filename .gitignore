@@ -1,0 +1,6 @@
+node_modules/
+cocos/library/
+cocos/temp/
+cocos/build/
+cocos/profiles/
+.DS_Store

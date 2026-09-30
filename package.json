@@ -1,0 +1,20 @@
+{
+  "name": "zhaomaomao",
+  "version": "1.0.0",
+  "private": true,
+  "description": "猫棋（猫咪拼图）— 每行每列各一只猫的色块逻辑谜题，网页版 + 微信小程序双端同步",
+  "scripts": {
+    "test": "node --test engine/test/engine.test.js engine/test/mp-game.test.js",
+    "gen": "node engine/cli.js gen",
+    "gen-batch": "node engine/cli.js gen-batch",
+    "validate": "node engine/cli.js validate --all",
+    "audit-hints": "node engine/cli.js audit-hints",
+    "docs": "node engine/cli.js docs && node engine/cli.js index",
+    "build": "node engine/cli.js build",
+    "serve": "python3 -m http.server 8137",
+    "web-smoke": "node scripts/web-smoke.mjs"
+  },
+  "devDependencies": {
+    "miniprogram-automator": "^0.12.1"
+  }
+}
