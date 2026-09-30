@@ -35,3 +35,10 @@
 | 29 | 09-30 | 游戏文案满屏术语（taevas 反馈：要人话） | R4C5/区块B/候选格/八向紧贴等工程语言 | hint.js 全部文案重写（坐标→第r排第c列、区块→色名"薄荷绿"等、候选格→能住猫的格子），色名经 names 参数注入（core.PALETTE 单一来源）；规则说明口语化（"连在一起的同色格子""猜错2次这关就输了"）；文档重生成 |
 | 30 | 09-30 | 小程序无法在本机跑起来验收 | CLI 服务端口需 GUI 内开启；touristappid 被新版工具拒绝 | taevas 开端口+导入（测试号 wx57df…）；引入 miniprogram-automator 全自动驱动真实模拟器（scripts/mp-automator.test.js）：列表100卡/棋盘渲染/双击判定/判错失败/跟随提示通关 全过，附 3 张模拟器截图 |
 | 31 | 09-30 | 要做动画改造，原生版不适合重动效（taevas 决策） | 页面体系无逐帧动画能力 | 单独新建 cocos/（Cocos Creator 3.8.8，微信小游戏目标），不动原生版：boot.ts 全动态 UI（Graphics+Label+tween 零纹理），动画=猫弹跳/判错抖动红闪/彩纸/卡片入场；build-cocos 命令把引擎 UMD 转 TS + 100 关数据同步进工程（单一来源） |
+| 32 | 10-01 | cocos 页面启动报 Boot 组件 corrupted 被移除，游戏黑屏 | 手写场景里 Boot 的压缩 uuid（sAewBw…）是非法值，与 boot.ts.meta uuid（b007b007-…）对不上 | 按 Cocos 压缩算法（保留前 5 位+base64）重算为 b007bAHAABAAIAAwP/uAAAB 并改 main.scene |
+| 33 | 10-01 | 全场景不渲染，只见相机 clear color | 手写场景所有节点 _lscale 写成 (0,0,0)，整棵树缩成一个点 | main.scene 全部 _lscale 改 (1,1,1) |
+| 34 | 10-01 | 节点树/坐标正确但仍 0 绘制 UI | 运行时 new Node() 默认 layer=DEFAULT(1<<30)，相机 visibility 只含 UI_2D | boot.ts 统一 uiNode() 工厂创建节点并挂 UI_2D 层 |
+| 35 | 10-01 | 6 猫全部放上后胜利永不触发 | TS 降级 ES5 把 [...map.values()] 编成 [].concat(iterator)，concat 不展开迭代器恒为空 | 迭代器展开一律改 Array.from（judge 计数 + 驱动 state） |
+| 36 | 10-01 | 图片资源运行时加载不到 spriteFrame | CLI 导入把 resources/img 全部标成 type=texture，没生成 spriteFrame 子资源 | 15 张图 meta 改 type=sprite-frame 并清 library 缓存重导入 |
+| 37 | 10-01 | 画面被放大裁切、取景错位 | 手写场景 Canvas 未绑相机，ortho 恒 480，与代码设定的 720×1280 竖屏分辨率脱节 | onLoad 里 setDesignResolutionSize(720,1280,FIXED_HEIGHT) + 绑定 cameraComponent + update 每帧同步 ortho=可视高一半 |
+| 38 | 10-01 | 冒烟就绪竞态：ready() 首个回调即真，猫图未加载完就开打 | loadAll 期间 frames 键逐个出现被误判为加载完成 | ready() 改为 loadAll 整体完成标志；catNode 缺图兜底回 🐱 |

@@ -19,11 +19,34 @@ Cocos Creator 3.8.x 工程，构建目标 **微信小游戏**。与原生小程�
 ```
 cocos/
   package.json            # creator 版本声明
-  assets/scenes/main.scene# 唯一场景（Canvas + Camera + Boot）
-  assets/scripts/boot.ts  # 全部 UI/交互/动画（Graphics+Label+tween，无纹理资源）
+  buildConfig.wechatgame.json # 微信构建配置（appid + 引擎分离插件）
+  assets/scenes/main.scene# 唯一场景（Canvas + Camera + Boot；节点 scale 已修正为 1）
+  assets/scripts/boot.ts  # 全部 UI/交互/动画/音效/存档（Kenney 贴图 UI + AI 猫 sprite）
+  assets/resources/       # 图片 + mp3 音效（构建时打进 resources bundle，勿手改 meta 的 type 字段）
   assets/scripts/engine/  # ← npm run build 生成（core/solver/hint TS 化）
   assets/scripts/levels-data.ts # ← npm run build 生成（100 关）
 ```
+
+## 构建与验收（全部 CLI 化）
+
+```
+npm run build-cocos        # 引擎 UMD→TS + 关卡数据同步进工程
+npm run build-cocos-web    # Cocos CLI 构建 web-mobile
+npm run cocos-smoke        # headless 驱动 __zmmCocos：启动/L1通关/星级/解锁/存档 + 截图
+npm run build-cocos-wx     # 微信小游戏构建（引擎分离插件）+ 删本地引擎兜底 + 4MB 体积校验
+```
+
+微信端验收：微信开发者工具 → 导入 `cocos/build/wechatgame/`（appid 已配测试号）→ 预览。
+
+## 资源与授权
+
+- UI/图标/背景/音效：Kenney（CC0）· 猫：AI 生成（idle 已入，happy/hurt/dead 待补，`asset-candidates/AI_CAT_BRIEF.md` 有规格）
+- 素材选用标准见 `docs/ASSET_STANDARD.md`（卡通 Q 版一票否决门 + ≥9 分打分表）
+- 猫四态图到位后直接覆盖 `assets/resources/img/cat_{happy,hurt,dead}.png` 重新构建即可热替换（代码自动识别，缺图自动降级 idle+变形动画）
+
+## 已知坑（详见 docs/QA.md #32~38）
+
+手写场景曾有：非法压缩 uuid / 节点 scale=0 / Canvas 未绑相机 / 横屏设计分辨率；运行时节点必须挂 UI_2D 层；ES5 降级下迭代器展开不可用；图片 meta 的 type 必须是 sprite-frame。
 
 ## 交互（与原生版同构）
 

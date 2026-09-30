@@ -11,8 +11,12 @@
     "audit-hints": "node engine/cli.js audit-hints",
     "docs": "node engine/cli.js docs && node engine/cli.js index",
     "build": "node engine/cli.js build",
+    "build-cocos": "node engine/cli.js build-cocos",
+    "build-cocos-web": "~/Applications/CocosCreator.app/Contents/MacOS/CocosCreator --project \"$PWD/cocos\" --build \"platform=web-mobile;debug=true\"",
+    "cocos-smoke": "node scripts/cocos-smoke.mjs",
     "serve": "python3 -m http.server 8137",
-    "web-smoke": "node scripts/web-smoke.mjs"
+    "web-smoke": "node scripts/web-smoke.mjs",
+    "build-cocos-wx": "bash scripts/build-cocos-wechat.sh"
   },
   "devDependencies": {
     "miniprogram-automator": "^0.12.1"

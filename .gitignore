@@ -1,6 +1,15 @@
+# 依赖
 node_modules/
+
+# Cocos Creator 生成物（构建/导入缓存/编辑器本地配置，均可再生）
 cocos/library/
 cocos/temp/
 cocos/build/
 cocos/profiles/
+
+# 素材搜集草稿区（已采用素材已入库 cocos/assets/resources/；候选档案本地保留不入库）
+asset-candidates/
+
+# 杂项
 .DS_Store
+*.log

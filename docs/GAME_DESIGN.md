@@ -106,3 +106,10 @@ engine/cli.js         # gen / gen-batch / validate / docs / index / trace / buil
 
 - 大棋盘（15+）依靠少量强制格 + 边界移动收敛唯一性；难度主要来自规模与推理链长度，而非强制格数量。
 - 颜色语义：每区块独占一色（恒等映射），同色必连通；调色板 24 色 ≥ 最大区块数 20。
+
+## 9. Cocos 动画版（2026-10-01 起，主战场）
+
+- 定位：动画体验版（猫落地弹跳/判错红闪/彩纸/星级弹入），原生小程序版冻结，web 版保持极简。
+- 素材：Kenney UI/背景/音效（CC0）+ AI 生成猫（卡通 Q 版，标准见 docs/ASSET_STANDARD.md：一票否决门 + ≥9 打分表）；猫四态缺图时自动降级为变形动画+表情标记。
+- 进度：通关存档（星级 3=零猜错零提示）+ 顺序解锁；设置页（音效/重置）；首次启动规则页。
+- 流水线：`npm run build-cocos`（引擎/数据同步）→ `build-cocos-web` / `build-cocos-wx`（微信引擎分离，主包≤4MB）→ `cocos-smoke`（headless 驱动 __zmmCocos 验收+截图）。
