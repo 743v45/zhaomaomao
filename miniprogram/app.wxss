@@ -1,0 +1,10 @@
+page {
+  background: #FFF6EC;
+  color: #4a3f35;
+  font-family: -apple-system, "PingFang SC", sans-serif;
+}
+.btn {
+  border: 2px solid #e8d5b8; background: #fff; color: #6b5b4e;
+  border-radius: 10px; padding: 10rpx 28rpx; font-size: 28rpx;
+}
+.btn-primary { background: #ff9d68; border-color: #ff9d68; color: #fff; font-weight: 600; }

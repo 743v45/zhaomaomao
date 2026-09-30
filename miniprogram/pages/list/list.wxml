@@ -1,0 +1,18 @@
+<view class="page">
+  <view class="tip">每个颜色住一只猫 · 共 {{groups.length}} 种规格</view>
+  <block wx:for="{{groups}}" wx:key="size" wx:for-item="g">
+    <view class="section">{{g.size}}×{{g.size}}（{{g.size}} 只猫）</view>
+    <view class="grid">
+      <view
+        wx:for="{{g.levels}}" wx:key="id"
+        class="card {{item.done ? 'done' : ''}} {{item.locked ? 'locked' : ''}}"
+        data-id="{{item.id}}" data-locked="{{item.locked}}"
+        bindtap="onTapLevel">
+        <view class="no">{{item.locked ? '🔒' : item.id}}</view>
+        <view class="name">{{item.name}}</view>
+        <view class="meta">难度 {{item.difficulty}}</view>
+        <view class="bar"><view class="bar-i" style="width:{{item.difficulty}}%"></view></view>
+      </view>
+    </view>
+  </block>
+</view>

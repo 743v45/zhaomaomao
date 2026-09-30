@@ -1,0 +1,24 @@
+<view class="page">
+  <view class="info">
+    <text>{{level.size}}×{{level.size}} · 放 {{n}} 只猫 · 难度 {{level.difficulty}}</text>
+    <text>🐱 {{catCount}}/{{n}} · 冲突 {{conflictCount}}</text>
+  </view>
+  <view class="toolbar">
+    <button class="btn" size="mini" bindtap="onTapReset">重置</button>
+    <button class="btn btn-primary" size="mini" bindtap="onTapHint">💡 提示</button>
+  </view>
+  <view class="board-wrap">
+    <view id="board" class="board" style="width:{{boardPx}}px;height:{{boardPx}}px;"
+      catchtouchstart="onTouchStart" catchtouchmove="onTouchMove" catchtouchend="onTouchEnd">
+      <view wx:for="{{cells}}" wx:key="i"
+        class="cell {{item.cls}} {{item.br ? 'br' : ''}} {{item.bb ? 'bb' : ''}}"
+        style="background:{{item.color}};width:{{boardPx / n}}px;height:{{boardPx / n}}px;font-size:{{boardPx / n * 0.62}}px;">
+        {{item.glyph}}
+      </view>
+    </view>
+  </view>
+  <view class="rules-tip">
+    怎么玩：每一横排、每一竖列、每一片连在一起的同色格子，都正好住一只猫；两只猫不能紧挨着（横竖斜贴着都不行）。
+    点一下空格标 ✕ 排除（再点取消）；按住拖一排连标；连点两下就是猜猫：猜对猫就住下 🐱，猜错这格自动打 ✕ 并记一次失败，猜错 2 次这关就输了。
+  </view>
+</view>

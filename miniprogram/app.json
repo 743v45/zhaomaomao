@@ -1,0 +1,13 @@
+{
+  "pages": [
+    "pages/list/list",
+    "pages/game/game"
+  ],
+  "window": {
+    "navigationBarTitleText": "猫棋",
+    "navigationBarBackgroundColor": "#FFF6EC",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#FFF6EC"
+  },
+  "sitemapLocation": "sitemap.json"
+}

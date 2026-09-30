@@ -1,0 +1,4 @@
+{
+  "desc": "猫棋关卡选择与游戏",
+  "rules": [{ "action": "allow", "page": "*" }]
+}

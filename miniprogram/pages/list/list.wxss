@@ -1,0 +1,20 @@
+.page { padding: 20rpx; }
+.tip { font-size: 24rpx; color: #a08c76; margin-bottom: 16rpx; }
+.section { font-size: 26rpx; color: #8a7560; margin: 28rpx 0 12rpx; }
+.grid { display: flex; flex-wrap: wrap; gap: 14rpx; }
+.card {
+  width: 200rpx; background: #fff; border: 2px solid #f0dfc8; border-radius: 20rpx;
+  padding: 14rpx 8rpx; text-align: center; position: relative;
+}
+.card.done { border-color: #9ec98f; }
+.card.locked { opacity: 0.45; }
+.card.done::after {
+  content: '✓'; position: absolute; top: -8rpx; right: -8rpx;
+  background: #9ec98f; color: #fff; font-size: 20rpx;
+  width: 32rpx; height: 32rpx; line-height: 32rpx; border-radius: 50%;
+}
+.no { font-size: 34rpx; font-weight: 700; }
+.name { font-size: 20rpx; color: #a08c76; margin-top: 4rpx; }
+.meta { font-size: 20rpx; color: #a08c76; }
+.bar { height: 8rpx; border-radius: 6rpx; background: #f0e4d2; margin-top: 8rpx; overflow: hidden; }
+.bar-i { height: 100%; background: linear-gradient(90deg, #ffb36b, #ff8b5e); }
