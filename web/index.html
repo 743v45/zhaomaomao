@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>猫棋 · 每个颜色住一只猫</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="brand">🐱 猫棋</div>
+  <div class="sub" id="subTitle">每个颜色住一只猫</div>
+</header>
+<main id="view"></main>
+
+<!-- 引擎（UMD，与小程序同源） -->
+<script src="../engine/src/core.js"></script>
+<script src="../engine/src/solver.js"></script>
+<script src="../engine/src/hint.js"></script>
+<!-- 关卡数据（npm run build 生成） -->
+<script src="levels-data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

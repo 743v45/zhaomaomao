@@ -1,0 +1,102 @@
+/* 猫棋网页版样式 */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: #FFF6EC;
+  color: #4a3f35;
+  min-height: 100vh;
+}
+header {
+  position: sticky; top: 0; z-index: 10;
+  background: rgba(255, 246, 236, 0.94);
+  backdrop-filter: blur(6px);
+  padding: 10px 16px;
+  border-bottom: 2px solid #f0dfc8;
+  display: flex; align-items: baseline; gap: 10px;
+}
+.brand { font-size: 20px; font-weight: 700; }
+.sub { font-size: 12px; color: #a08c76; }
+main { max-width: 720px; margin: 0 auto; padding: 14px 12px 60px; }
+
+/* ---------- 关卡列表 ---------- */
+.level-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.lv-card {
+  background: #fff; border: 2px solid #f0dfc8; border-radius: 12px;
+  padding: 8px 6px; text-align: center; cursor: pointer; position: relative;
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+.lv-card:active { transform: scale(0.96); }
+.lv-card .no { font-size: 18px; font-weight: 700; }
+.lv-card .meta { font-size: 11px; color: #a08c76; margin-top: 2px; }
+.lv-card .bar { height: 5px; border-radius: 3px; background: #f0e4d2; margin-top: 5px; overflow: hidden; }
+.lv-card .bar i { display: block; height: 100%; background: linear-gradient(90deg, #ffb36b, #ff8b5e); }
+.lv-card.done { border-color: #9ec98f; }
+.lv-card.done::after { content: '✓'; position: absolute; top: -6px; right: -4px; background: #9ec98f; color: #fff; font-size: 11px; width: 18px; height: 18px; line-height: 18px; border-radius: 50%; }
+.lv-card.locked { opacity: 0.45; cursor: not-allowed; }
+.section-title { margin: 18px 0 8px; font-size: 14px; color: #8a7560; }
+
+/* ---------- 游戏 ---------- */
+.info {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  font-size: 13px; color: #8a7560; margin-bottom: 10px; flex-wrap: wrap;
+}
+.info b { color: #4a3f35; }
+.toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.btn {
+  border: 2px solid #e8d5b8; background: #fff; color: #6b5b4e;
+  border-radius: 10px; padding: 7px 14px; font-size: 14px; cursor: pointer;
+}
+.btn:active { background: #f7ecdd; }
+.btn.primary { background: #ff9d68; border-color: #ff9d68; color: #fff; font-weight: 600; }
+
+#boardWrap { display: flex; justify-content: center; }
+.board {
+  display: grid; gap: 0;
+  grid-auto-rows: 1fr;
+  border: 3px solid #6b5b4e; border-radius: 8px;
+  touch-action: none; user-select: none;
+  width: min(94vw, 560px, 70vh);
+}
+.cell {
+  position: relative; display: flex; align-items: center; justify-content: center; aspect-ratio: 1 / 1;
+  border: 1px solid rgba(107, 91, 78, 0.28); /* 数独式宫格细线 */
+}
+.cell .glyph { font-size: calc(min(94vw, 560px, 70vh) / var(--n) * 0.62); line-height: 1; }
+.cell.x .glyph { color: #b3a695; font-weight: 700; }
+.cell.sysx .glyph { color: #d95f43; font-weight: 700; } /* 系统 X（判错锁定）与人工 X 区分 */
+.cell.cat { z-index: 2; }
+.cell.cat .glyph { filter: drop-shadow(0 1px 1px rgba(0,0,0,0.25)); }
+.cell.br { border-right: 3px solid #6b5b4e; }  /* 色块边界粗线 */
+.cell.bb { border-bottom: 3px solid #6b5b4e; }
+.cell.conflict { box-shadow: inset 0 0 0 3px #e5533c; border-radius: 4px; animation: shake 0.25s; }
+.cell.hl { box-shadow: inset 0 0 0 3px #3f8cff; border-radius: 4px; }
+@keyframes shake { 25% { transform: translateX(2px); } 75% { transform: translateX(-2px); } }
+
+.rules-tip { font-size: 12px; color: #a08c76; margin-top: 10px; line-height: 1.7; }
+.rules-tip b { color: #8a7560; }
+
+/* ---------- 提示 / 胜利 弹层 ---------- */
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: -240px; z-index: 20;
+  background: #fff; border-radius: 16px 16px 0 0; padding: 16px;
+  box-shadow: 0 -6px 30px rgba(0,0,0,0.12); transition: bottom 0.25s;
+}
+.sheet.show { bottom: 0; }
+.sheet h3 { margin: 0 0 8px; font-size: 16px; }
+.sheet .txt { font-size: 14px; line-height: 1.8; color: #5c4f43; }
+.sheet .row { display: flex; gap: 10px; margin-top: 14px; }
+
+.mask {
+  position: fixed; inset: 0; z-index: 30; background: rgba(60, 46, 32, 0.45);
+  display: none; align-items: center; justify-content: center;
+}
+.mask.show { display: flex; }
+.win-card {
+  background: #fff; border-radius: 18px; padding: 26px 30px; text-align: center;
+  animation: pop 0.3s;
+}
+@keyframes pop { 0% { transform: scale(0.7); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+.win-card .big { font-size: 42px; }
+.win-card h2 { margin: 6px 0 4px; }
+.win-card .meta { font-size: 13px; color: #a08c76; margin-bottom: 14px; }
