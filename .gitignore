@@ -13,3 +13,4 @@ asset-candidates/
 # 杂项
 .DS_Store
 *.log
+paseo.json
