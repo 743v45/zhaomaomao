@@ -5,7 +5,7 @@
  * 性能约束：棋盘全部色块/边界画在 board 的单个 Graphics 上（1 dc）；✕/高亮/猫等渲染件按需惰性创建。
  * 猫四态：cat_idle 必备；cat_happy/cat_hurt/cat_dead 缺失时自动降级为 idle+变形动画（出图后直接热替换）。
  * 场景里挂这一个组件即可（assets/scenes/main.scene）。 */
-import { _decorator, Component, Node, Label, Graphics, UITransform, Color, Vec3, tween, Tween, UIOpacity, Input, sys, Sprite, SpriteFrame, resources, AudioClip, AudioSource, view, Layers, ResolutionPolicy, Canvas, Camera, director, Font } from 'cc';
+import { _decorator, Component, Node, Label, Graphics, UITransform, Color, Vec3, tween, Tween, UIOpacity, Input, sys, Sprite, SpriteFrame, resources, AudioClip, AudioSource, view, Layers, ResolutionPolicy, Canvas, Camera, director, Font, Texture2D, Rect } from 'cc';
 const { ccclass } = _decorator;
 
 import CatChessMod from './engine/index';
@@ -22,7 +22,21 @@ const IMG = ['btn_normal', 'btn_pressed', 'btn_accent', 'btn_accent_pressed', 'b
   'icon_star', 'icon_star_empty', 'icon_cross', 'icon_back', 'icon_reset', 'icon_gear',
   'icon_sound_on', 'icon_sound_off', 'cat_idle', 'bg_paw',
   'logo', 'title_win', 'title_rules', 'title_settings', 'title_fail',
-  'lock', 'capsule', 'infobar', 'cat_v2', 'cat_v3', 'cat_v4'];
+  'lock', 'capsule', 'infobar', 'cat_v2', 'cat_v3', 'cat_v4', 'board_frame', 'board_bg_soft',
+  'cloud_1', 'cloud_2', 'cloud_3', 'prop_yarn', 'prop_fish', 'prop_milk', 'confetti_sheet',
+  'banner_xiaoyuan', 'banner_jiequ', 'banner_gongyuan', 'banner_jieshi', 'banner_maodu'];
+
+/* 柔和化 24 色板（CIELab 降饱和提亮，区分度硬约束 ≥90%），与引擎 PALETTE 同序 */
+const SOFT_PALETTE = ['#F7CAD5', '#FDE592', '#BDE7B5', '#B4D8F5', '#DBC7EF', '#F9C895', '#A6DAD6', '#F5AFA6', '#C7E997', '#A3C8E8', '#F8E8B8', '#D8E9CB', '#EAC7B9', '#C9CBEF', '#F3B782', '#AEE1C9', '#F2B4CC', '#E9DFB9', '#BDCFE0', '#E4CADE', '#FCD6B4', '#D2E9DC', '#E9D3F1', '#F9E4CB'];
+
+/* 章节分组（关卡名前缀对应） */
+const CHAPTERS = [
+  { from: 1, to: 20, img: 'banner_xiaoyuan' },
+  { from: 21, to: 45, img: 'banner_jiequ' },
+  { from: 46, to: 72, img: 'banner_gongyuan' },
+  { from: 73, to: 99, img: 'banner_jieshi' },
+  { from: 100, to: 100, img: 'banner_maodu' },
+];
 const CAT_STATES = ['cat_idle', 'cat_happy', 'cat_hurt', 'cat_dead'];
 const SFX = ['click', 'tick', 'place', 'error', 'hint', 'star', 'win', 'lose', 'meow', 'toggle', 'bgm'];
 
@@ -54,6 +68,7 @@ export class Boot extends Component {
 
   private frames: Record<string, SpriteFrame | null> = {};
   private clips: Record<string, AudioClip | null> = {};
+  private confettiTex: Texture2D | null = null;
   private audioSrc: AudioSource = null!;
   private bgmSrc: AudioSource | null = null;
   private bgmOn = false;
@@ -127,11 +142,19 @@ export class Boot extends Component {
       });
     });
   }
+  private loadConfettiTex(): Promise<void> {
+    return new Promise(res => {
+      resources.load('img/confetti_sheet/texture', Texture2D, (err, t) => {
+        this.confettiTex = err ? null : t as Texture2D;
+        res();
+      });
+    });
+  }
   private async loadAll() {
     await Promise.all([...IMG.map(n => this.loadImg(n)),
       ...CAT_STATES.map(n => this.loadCat(n)),
       ...SFX.map(n => this.loadSfx(n)),
-      this.loadFont()]);
+      this.loadFont(), this.loadConfettiTex()]);
     this.loaded = true;
   }
   private play(name: string) {
@@ -181,6 +204,12 @@ export class Boot extends Component {
     const op = this.root.getComponent(UIOpacity) || this.root.addComponent(UIOpacity);
     op.opacity = 0;
     tween(op).to(0.2, { opacity: 255 }).start();
+  }
+
+  /* 插到背景之上、其余 UI 之下（云朵/装饰用） */
+  private insertChildBelow(n: Node) {
+    const bg = this.root.getChildByName('bg');
+    this.root.insertChild(n, bg ? this.root.children.indexOf(bg) + 1 : 0);
   }
 
   /* 全屏平铺背景（Kenney 猫爪印奶油纹，CC0） */
@@ -249,6 +278,23 @@ export class Boot extends Component {
     this.page = Math.max(0, Math.min(this.save.page || 0, pages - 1));
     const from = this.page * perPage;
     const items = LEVELS.slice(from, from + perPage);
+    /* 背景漂浮云朵（低透明，缓慢横漂） */
+    [['cloud_1', -180, H / 2 - 420, 210], ['cloud_2', 200, H / 2 - 640, 180], ['cloud_3', -60, -H / 2 + 260, 160]].forEach(([img, cx, cy, w], k) => {
+      const cl = this.makeSprite(img as string, w as number, (w as number) * 0.6);
+      if (!cl) return;
+      cl.setPosition(cx as number, cy as number, 0);
+      const op = cl.addComponent(UIOpacity); op.opacity = 60;
+      this.root.addChild(cl);
+      this.insertChildBelow(cl);
+      tween(cl).repeatForever(tween(cl)
+        .to(3 + k, { position: new Vec3((cx as number) + 26, cy as number, 0) }, { easing: 'sineInOut' })
+        .to(3 + k, { position: new Vec3(cx as number, cy as number, 0) }, { easing: 'sineInOut' })).start();
+    });
+    /* 章节横幅（当前页首关所属章节） */
+    const chapter = CHAPTERS.find(c => items[0] && items[0].id >= c.from && items[0].id <= c.to);
+    const gridTop0 = H / 2 - 300;
+    const chB = chapter ? this.makeSprite(chapter.img, 300, 50) : null;
+    if (chB) { chB.setPosition(0, gridTop0 + 8, 0); this.root.addChild(chB); }
     const gridTop = H / 2 - 300;
     const cardW = (W - 60 - 4 * 12) / 5, cardH = 108;
     items.forEach((lv: Level, idx: number) => {
@@ -354,7 +400,7 @@ export class Boot extends Component {
     this.addBackground();
     const n = this.level.size;
     const { width: W, height: H } = this.viewSize();
-    this.boardPx = Math.min(W - 24, H - 210);
+    this.boardPx = Math.min(W - 110, H - 215);   /* 给奶油外框（1.087 倍）留出完整入镜余量 */
     this.cellPx = Math.floor(this.boardPx / n);
     this.boardPx = this.cellPx * n;
 
@@ -396,9 +442,15 @@ export class Boot extends Component {
     const g = board.addComponent(Graphics);
     g.fillColor = new Color(107, 91, 78, 255);
     g.roundRect(-this.boardPx / 2 - 3, -this.boardPx / 2 - 3, this.boardPx + 6, this.boardPx + 6, 6); g.fill();
+    /* 柔和底纹：作为 board 的兄弟节点垫在下层（子节点会盖住父 Graphics） */
+    const bgs = this.makeSprite('board_bg_soft', this.boardPx, this.boardPx);
+    if (bgs) {
+      bgs.setPosition(0, -30, 0);
+      this.root.insertChild(bgs, this.root.children.indexOf(board));
+    }
     for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
       const i = r * n + c;
-      const [hexR, hexG, hexB] = this.hexColor(CatChess.PALETTE[this.level.regionColors[this.level.regions[i]]][0]);
+      const [hexR, hexG, hexB] = this.hexColor(SOFT_PALETTE[this.level.regionColors[this.level.regions[i]]] || CatChess.PALETTE[this.level.regionColors[this.level.regions[i]]][0]);
       const cx = -this.boardPx / 2 + this.cellPx * (c + 0.5), cy = this.boardPx / 2 - this.cellPx * (r + 0.5);
       g.fillColor = new Color(hexR, hexG, hexB, 255);
       g.fillRect(cx - this.cellPx / 2, cy - this.cellPx / 2, this.cellPx, this.cellPx);
@@ -416,6 +468,19 @@ export class Boot extends Component {
       board.addChild(cell);
       this.cells.push({ node: cell, xIcon: null, hl: null, r, c });
     }
+    /* 奶油窄边外框（开窗 92%，贴图比例 1/0.92 ≈ 1.087 倍 board） */
+    const frame = this.makeSprite('board_frame', this.boardPx * 1.087, this.boardPx * 1.087);
+    if (frame) board.addChild(frame);
+    /* 棋盘下方空区：小道具散落（毛线球/鱼干/奶瓶） */
+    const props = [['prop_yarn', -W / 2 + 90, -H / 2 + 210, 64, -12], ['prop_fish', W / 2 - 120, -H / 2 + 260, 72, 14], ['prop_milk', W / 2 - 70, -H / 2 + 120, 52, 6]] as const;
+    props.forEach(([img, px, py, w, ang]) => {
+      const p = this.makeSprite(img as string, w as number, w as number, undefined);
+      if (!p) return;
+      p.setPosition(px as number, py as number, 0);
+      p.angle = ang as number;
+      const op = p.addComponent(UIOpacity); op.opacity = 160;
+      this.root.addChild(p);
+    });
     board.setScale(0.7, 0.7, 1);
     tween(board).to(0.3, { scale: new Vec3(1, 1, 1) }, { easing: 'backOut' }).start();
 
@@ -718,16 +783,30 @@ export class Boot extends Component {
     tween(card).to(0.26, { scale: new Vec3(1, 1, 1) }, { easing: 'backOut' }).start();
   }
 
-  private confetti() {                   /* 全屏彩纸（程序化小方块，零纹理） */
+  private confetti() {                   /* 全屏彩纸：图集贴图版（星/心/圆点/纸条），缺图退回色块 */
     const { width: W, height: H } = this.viewSize();
-    const colors = ['#F7C6D2', '#FCE38A', '#B8E6B0', '#AED6F5', '#F5A9A0', '#D9C4EE'];
     for (let k = 0; k < 40; k++) {
       const p = this.uiNode('confetti');
-      p.addComponent(UITransform).setContentSize(10, 14);
-      const g = p.addComponent(Graphics);
-      const [r, gg, b] = this.hexColor(colors[k % colors.length]);
-      g.fillColor = new Color(r, gg, b, 255);
-      g.fillRect(-5, -7, 10, 14); g.fill();
+      p.addComponent(UITransform).setContentSize(20, 20);
+      let made = false;
+      if (this.confettiTex) {
+        const sf = new SpriteFrame();
+        sf.texture = this.confettiTex;
+        const cell = Math.floor(Math.random() * 16);
+        const col = cell % 4, row = Math.floor(cell / 4);
+        sf.rect = new Rect(col * 128, (3 - row) * 128, 128, 128);   /* 纹理坐标左下原点 */
+        const sp = p.addComponent(Sprite);
+        sp.spriteFrame = sf;
+        sp.sizeMode = Sprite.SizeMode.CUSTOM;
+        made = true;
+      }
+      if (!made) {
+        const colors = ['#F7C6D2', '#FCE38A', '#B8E6B0', '#AED6F5', '#F5A9A0', '#D9C4EE'];
+        const g = p.addComponent(Graphics);
+        const [r, gg, b] = this.hexColor(colors[k % colors.length]);
+        g.fillColor = new Color(r, gg, b, 255);
+        g.fillRect(-5, -7, 10, 14); g.fill();
+      }
       p.setPosition((Math.random() - 0.5) * W, H / 2 + 30, 0);
       this.root.addChild(p);
       const dx = (Math.random() - 0.5) * 300;

@@ -12,11 +12,11 @@
     "docs": "node engine/cli.js docs && node engine/cli.js index",
     "build": "node engine/cli.js build",
     "build-cocos": "node engine/cli.js build-cocos",
-    "build-cocos-web": "~/Applications/CocosCreator.app/Contents/MacOS/CocosCreator --project \"$PWD/cocos\" --build \"platform=web-mobile;debug=false\"",
+    "build-cocos-web": "python3 scripts/fix-img-meta.py && ~/Applications/CocosCreator.app/Contents/MacOS/CocosCreator --project \"$PWD/cocos\" --build \"platform=web-mobile;debug=false\"",
     "cocos-smoke": "node scripts/cocos-smoke.mjs",
     "serve": "python3 -m http.server 8137",
     "web-smoke": "node scripts/web-smoke.mjs",
-    "build-cocos-wx": "bash scripts/build-cocos-wechat.sh"
+    "build-cocos-wx": "python3 scripts/fix-img-meta.py && bash scripts/build-cocos-wechat.sh"
   },
   "devDependencies": {
     "miniprogram-automator": "^0.12.1"
