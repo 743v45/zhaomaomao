@@ -521,12 +521,14 @@ export class Boot extends Component {
 
   private cellAtEvent(e: any): number {
     const n = this.level.size;
+    const board = this.cells[0]?.node?.parent;
+    if (!board) return -1;
+    /* 引擎官方换算：UI 世界坐标 → board 局部坐标（自动处理 canvas 缩放/层级，手算坐标系必错） */
     const ui = e.getUILocation();
-    const bp = this.cells[0].node.parent!.position;
-    const x = ui.x - bp.x, y = ui.y - bp.y;
-    if (x < -this.boardPx / 2 || y < -this.boardPx / 2 || x >= this.boardPx / 2 || y >= this.boardPx / 2) return -1;
-    const c = Math.floor((x + this.boardPx / 2) / this.cellPx);
-    const r = Math.floor((this.boardPx / 2 - y) / this.cellPx);
+    const local = board.getComponent(UITransform)!.convertToNodeSpaceAR(new Vec3(ui.x, ui.y, 0));
+    if (Math.abs(local.x) > this.boardPx / 2 || Math.abs(local.y) > this.boardPx / 2) return -1;
+    const c = Math.floor((local.x + this.boardPx / 2) / this.cellPx);
+    const r = Math.floor((this.boardPx / 2 - local.y) / this.cellPx);
     if (r < 0 || r >= n || c < 0 || c >= n) return -1;
     return r * n + c;
   }
@@ -572,7 +574,7 @@ export class Boot extends Component {
       /* 纯单击收尾：原本已有 ✕ 的格恢复空白（再点取消） */
       if (!g.moved && g.tapOff && this.manualX.has(i)) { this.manualX.delete(i); this.clearX(i, true); }
       const now = Date.now();
-      if (this.lastTap.i === i && now - this.lastTap.t < 400) {
+      if (this.lastTap.i === i && now - this.lastTap.t < 450) {
         this.lastTap = { i: -1, t: 0 };
         this.manualX.delete(i);
         this.clearX(i, true);

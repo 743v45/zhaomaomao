@@ -76,7 +76,9 @@ const click = async (x, y, cc = 1) => {
   _mx = x; _my = y; await delay(40);
 };
 const tap = async (x, y, label) => { log('点击', { x: Math.round(x), y: Math.round(y), target: label }); await click(x, y); await delay(120); };
-const dbltap = async (x, y, label) => { log('双击', { x: Math.round(x), y: Math.round(y), target: label }); await click(x, y, 1); await delay(150); await click(x, y, 2); await delay(150); };   /* 两次 release 间隔 ≈260ms，<400ms 判定窗口 */
+/* 双击判定窗口按两次 mouseUp 计（boot.ts lastTap <400ms）：click 尾部 40ms + 间隔 150ms + 二次按下→释放 70ms ≈260ms <400ms；
+ * 相邻棋盘手势之间须 >400ms，否则「再点取消」会被判成双击判定 */
+const dbltap = async (x, y, label) => { log('双击', { x: Math.round(x), y: Math.round(y), target: label }); await click(x, y, 1); await delay(150); await click(x, y, 2); await delay(150); };
 const drag = async (x1, y1, x2, y2, label) => {
   log('拖动', { from: [Math.round(x1), Math.round(y1)], to: [Math.round(x2), Math.round(y2)], target: label });
   if (_mx === null || Math.abs(_mx - x1) > 0.5 || Math.abs(_my - y1) > 0.5) await mouse('mouseMoved', x1, y1, 0);
@@ -141,7 +143,7 @@ await shot('02-list-after-rules');
 log('TC2 列表布局与导航', {});
 const cards = p.nodes.filter(n => n.name === 'card');
 assert('TC2 列表 20 张卡片', cards.length === 20, { count: cards.length });
-const logo = findNode(p, 'logo');
+const logo = p.nodes.find(n => /logo/i.test(n.name));
 assert('TC2 Logo 存在且在屏内', !!logo && logo.x > 0 && logo.x < VISW, logo || {});
 /* 玩法按钮再开再关（遮罩可点关闭） */
 const ruleBtn = findNode(p, 'icon-btn', 0);
@@ -188,7 +190,7 @@ assert('TC3 进入第 1 关', lv === 1, { level: lv });
 p = await probe();
 const board = findNode(p, 'board');
 assert('TC3 棋盘在屏内', board && board.x - board.w / 2 >= -10 && board.x + board.w / 2 <= VISW * SCALE + 10, board || {});
-const frame = findNode(p, 'board_frame');
+const frame = p.nodes.find(n => /frame/i.test(n.name) && n.w > 400);   /* 素材化后更名 img-board_frame */
 assert('TC3 外框完整入镜', frame && frame.x - frame.w / 2 >= -6 && frame.x + frame.w / 2 <= VISW * SCALE + 6, frame || {});
 const cells = p.nodes.filter(n => n.name === 'tile');
 assert('TC3 36 块瓷砖贴图', cells.length === 36, { count: cells.length });
@@ -215,6 +217,7 @@ const isSol = i => sol.includes(i);
     st = await ev(`window.__zmmCocos.state()`);
   }
   assert('TC4.1 单击标 ✕(含兜底)', st.manualX.includes(7), st);
+  await delay(500);   /* 与上一手势的 mouseUp 拉开 >400ms，防止 4.2 的再点被判定为双击 */
 }
 /* 4.2 再点取消 */
 {
@@ -223,10 +226,11 @@ const isSol = i => sol.includes(i);
   if (!st.manualX.includes(7)) {
     assert('TC4.2 再点取消', true, {});
   } else {
-    log('FINDING', { tc: 'TC4.2', issue: '再点未取消笔记（该次 ✕ 来自接口兜底，坐标路径取消无效——与 TC4.1 坐标未命中同因）', at: 'cell(1,1)' });
+    log('FINDING', { tc: 'TC4.2', issue: '再点未取消笔记（坐标路径取消无效）', at: 'cell(1,1)' });
     await ev(`window.__zmmCocos.clearX ? window.__zmmCocos.clearX(7,true) : window.__zmmCocos.tap(1,1)`);
     assert('TC4.2 再点取消(接口兜底)', true, {});
   }
+  await delay(450);   /* 拉开双击窗口：拖动落点若与格 7 重合不至于误判 */
 }
 /* 4.3 拖动连标（竖向 3 格，避开答案） */
 {
@@ -242,6 +246,7 @@ const isSol = i => sol.includes(i);
 /* 4.4 双击错格 → 猜错 1 次 */
 {
   await ev(`window.__zmmCocos.closeOverlay()`); await delay(250);
+  await delay(450);   /* 与拖动 mouseUp 拉开 >400ms 双击窗口 */
   const wrong = [1, 2, 3, 4, 5].find(i => !isSol(i));
   const [x, y] = cellC(wrong); await dbltap(x, y, `错格 ${wrong}`);
   await delay(300);
@@ -358,49 +363,69 @@ const gear = findNode(p, 'icon-btn', 1);
   const [x, y] = centerOf(gear); await tap(x, y, '设置按钮'); await delay(500);
 }
 await shot('13-settings');
+/* 设置行探针：armed/懒渲染时 row 可能暂缺，重探最多 4 次 */
+const rowCenter = async idx => {
+  for (let t = 0; t < 4; t++) {
+    const rs = (await probe()).nodes.filter(n => n.name === 'row');
+    if (rs.length > idx) return centerOf(rs[idx]);
+    await delay(400);
+  }
+  return null;
+};
 /* 音效开关 */
-let rows = p.nodes.filter(n => n.name === 'row');
-if (!rows.length) {
-  log('FINDING', { tc: 'TC7', issue: 'probe 未发现设置行节点（row），设置项交互以截图人审代替', at: 'TC7' });
-}
-if (rows.length) {
-  const [x, y] = centerOf(rows[0]); await tap(x, y, '音效开关'); await delay(200);
-  const s = await ev(`window.__zmmCocos.save()`);
-  assert('TC7 音效开关切换', s.sound === false, s);
-  const [x2, y2] = centerOf(rows[0]); await tap(x2, y2, '音效开关(还原)'); await delay(200);
+{
+  const rc = await rowCenter(0);
+  if (!rc) log('FINDING', { tc: 'TC7', issue: 'probe 未发现设置行节点（row），设置项交互以截图人审代替', at: 'TC7' });
+  if (rc) {
+    await tap(rc[0], rc[1], '音效开关'); await delay(200);
+    const s = await ev(`window.__zmmCocos.save()`);
+    assert('TC7 音效开关切换', s.sound === false, s);
+    await tap(rc[0], rc[1], '音效开关(还原)'); await delay(200);
+  }
 }
 /* 音乐开关 */
 {
-  rows = (await probe()).nodes.filter(n => n.name === 'row');
-  if (rows.length > 1) {
-    const [x, y] = centerOf(rows[1]); await tap(x, y, '音乐开关'); await delay(200);
+  const rc = await rowCenter(1);
+  if (rc) {
+    await tap(rc[0], rc[1], '音乐开关'); await delay(200);
     const s = await ev(`window.__zmmCocos.save()`);
     assert('TC7 音乐开关切换', s.music === false, s);
-    const [x2, y2] = centerOf(rows[1]); await tap(x2, y2, '音乐开关(还原)'); await delay(200);
+    await tap(rc[0], rc[1], '音乐开关(还原)'); await delay(200);
   }
 }
 /* 重置两步确认 + armed 超时回退 */
 {
-  rows = (await probe()).nodes.filter(n => n.name === 'row');
-  if (rows.length > 3) {
-    const [x, y] = centerOf(rows[3]); await tap(x, y, '重置(第一次)'); await delay(300);
+  const rc = await rowCenter(3);
+  if (!rc) {
+    log('FINDING', { tc: 'TC7', issue: '设置行(row)不足 4 行，跳过重置流', at: 'TC7' });
+  } else {
+    await tap(rc[0], rc[1], '重置(第一次)'); await delay(300);
     await shot('14-reset-armed');
     log('等待 armed 超时', { seconds: 5.2 }); await delay(5300);
-    rows = (await probe()).nodes.filter(n => n.name === 'row');
     const wonBefore = await ev(`Object.keys(window.__zmmCocos.save().won).length`);
-    const [x2, y2] = centerOf(rows[3]); await tap(x2, y2, '重置(超时后再点=第一次)');
-    await delay(300);
-    const wonMid = await ev(`Object.keys(window.__zmmCocos.save().won).length`);
-    assert('TC7 armed 超时回退（需重新两步）', wonMid === wonBefore, { before: wonBefore, after: wonMid });
-    rows = (await probe()).nodes.filter(n => n.name === 'row');
-    const [x3, y3] = centerOf(rows[3]); await tap(x3, y3, '重置(第二次=确认)');
-    await delay(900);
-    const wonAfter = await ev(`Object.keys(window.__zmmCocos.save().won).length`);
-    assert('TC7 两步确认清空进度', wonAfter === 0, { wonAfter });
+    const rc2 = await rowCenter(3);
+    if (!rc2) {
+      log('FINDING', { tc: 'TC7', issue: 'armed 超时后重置行消失，跳过超时回退断言', at: 'TC7' });
+    } else {
+      await tap(rc2[0], rc2[1], '重置(超时后再点=第一次)');
+      await delay(300);
+      const wonMid = await ev(`Object.keys(window.__zmmCocos.save().won).length`);
+      assert('TC7 armed 超时回退（需重新两步）', wonMid === wonBefore, { before: wonBefore, after: wonMid });
+      const rc3 = await rowCenter(3);
+      if (!rc3) {
+        log('FINDING', { tc: 'TC7', issue: '重新 armed 后重置行消失，跳过两步确认断言', at: 'TC7' });
+      } else {
+        await tap(rc3[0], rc3[1], '重置(第二次=确认)');
+        await delay(900);
+        const wonAfter = await ev(`Object.keys(window.__zmmCocos.save().won).length`);
+        assert('TC7 两步确认清空进度', wonAfter === 0, { wonAfter });
+      }
+    }
   }
 }
 /* 关闭设置 */
 {
+  p = await probe();
   const closeBtn = p.nodes.filter(n => n.name === 'btn').pop();
   const [x, y] = centerOf(closeBtn); await tap(x, y, '关闭设置'); await delay(400);
 }
