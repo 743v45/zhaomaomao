@@ -119,6 +119,32 @@ try {
     else if (!g.unlockedHas2) { bad++; console.log('解锁 ✗ 通关后 L2 未解锁'); }
     else if (!g.persisted) { bad++; console.log('存档 ✗ localStorage 无 zmm_cocos_v1'); }
     else console.log('通关 ✓ L1 驱动通关（猫 ' + g.cats + '，失败 0，' + (g.stars || '?') + '★，L2 已解锁，存档已写入）');
+    /* 布局审计：全部渲染节点尺寸/出屏/背景覆盖断言（视觉回归防线） */
+    const layout = await client.evaluate(`(()=>{
+      const scene=cc.director.getScene(); const vis=cc.view.getVisibleSize();
+      const issues=[]; let bg=null; const tiles=[]; const btns=[];
+      const walk=n=>{ if(!n||!n.getComponent)return; const ut=n.getComponent('cc.UITransform');
+        if(ut&&n.activeInHierarchy&&ut.width>0){
+          const w=n.worldPosition;
+          const half=ut.width/2, halfh=ut.height/2;
+          if (w.x-half>vis.width+2 || w.x+half<-2 || w.y-halfh>vis.height+2 || w.y+halfh<-2) {
+            if (!['confetti'].includes(n.name)) issues.push({t:'出屏', name:n.name, pos:[Math.round(w.x),Math.round(w.y)]});
+          }
+          if (n.name==='bg') bg={w:ut.width,h:ut.height};
+          if (n.name==='tile') tiles.push([ut.width,ut.height]);
+          if (n.name==='btn') btns.push([ut.width,ut.height]);
+        }
+        n.children.forEach(walk); };
+      walk(scene);
+      if (bg && (Math.abs(bg.w-vis.width)>2 || Math.abs(bg.h-vis.height)>2)) issues.push({t:'背景未铺满', bg});
+      const badBtn = btns.filter(b=>b[0]>500||b[0]<80);
+      if (badBtn.length) issues.push({t:'按钮尺寸异常(疑似贴图原尺寸泄漏)', badBtn});
+      const badTile = tiles.filter(t=>t[0]>300||t[0]<40);
+      if (badTile.length) issues.push({t:'格块尺寸异常', badTile});
+      return { issues, tileN: tiles.length, btnN: btns.length };
+    })()`);
+    if (layout.issues.length) { bad++; console.log('布局审计 ✗ ' + JSON.stringify(layout.issues)); }
+    else console.log(`布局审计 ✓ 出屏/背景/尺寸全部正常（瓷砖 ${layout.tileN} 按钮 ${layout.btnN}）`);
     await delay(700);
     await client.screenshot('docs/screenshots/cocos-win.png');     /* 胜利弹窗（星级+彩纸期间） */
     await client.evaluate(`window.__zmmCocos.closeOverlay()`);

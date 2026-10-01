@@ -458,7 +458,7 @@ export class Boot extends Component {
     this.root.addChild(board);
     const g = board.addComponent(Graphics);
     g.fillColor = new Color(107, 91, 78, 255);
-    g.roundRect(-this.boardPx / 2 - 3, -this.boardPx / 2 - 3, this.boardPx + 6, this.boardPx + 6, 6); g.fill();
+    g.roundRect(-this.boardPx / 2 - 3, -this.boardPx / 2 - 3, this.boardPx + 6, this.boardPx + 6, 24); g.fill();
     /* 柔和底纹：作为 board 的兄弟节点垫在下层（子节点会盖住父 Graphics），缝隙处透出波点 */
     const bgs = this.makeSprite('board_bg_soft', this.boardPx, this.boardPx);
     if (bgs) {
