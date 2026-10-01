@@ -5,7 +5,7 @@
  * 性能约束：棋盘全部色块/边界画在 board 的单个 Graphics 上（1 dc）；✕/高亮/猫等渲染件按需惰性创建。
  * 猫四态：cat_idle 必备；cat_happy/cat_hurt/cat_dead 缺失时自动降级为 idle+变形动画（出图后直接热替换）。
  * 场景里挂这一个组件即可（assets/scenes/main.scene）。 */
-import { _decorator, Component, Node, Label, Graphics, UITransform, Color, Vec3, tween, Tween, UIOpacity, Input, sys, Sprite, SpriteFrame, resources, AudioClip, AudioSource, view, Layers, ResolutionPolicy, Canvas, Camera, director, Font, Texture2D, Rect } from 'cc';
+import { _decorator, Component, Node, Label, Graphics, UITransform, Color, Vec3, tween, Tween, UIOpacity, Input, sys, Sprite, SpriteFrame, resources, AudioClip, AudioSource, view, Layers, ResolutionPolicy, Canvas, Camera, director, Font, Texture2D, Rect, LabelOutline } from 'cc';
 const { ccclass } = _decorator;
 
 import CatChessMod from './engine/index';
@@ -355,9 +355,9 @@ export class Boot extends Component {
       const sp = cardBg.getComponent(Sprite) as Sprite;
       sp.color = new Color(228, 222, 212, 255);   /* 锁定卡整体压灰 */
     }
-    const no = this.makeLabel(String(lv.id), 30, unlocked ? INK : FAINT); no.node.setPosition(0, 26, 0); n.addChild(no.node);
-    const nm = this.makeLabel(lv.name, 14, unlocked ? SUB : FAINT); nm.node.setPosition(0, 0, 0); n.addChild(nm.node);
-    const df = this.makeLabel('难度 ' + lv.difficulty, 14, unlocked ? SUB : FAINT); df.node.setPosition(0, -24, 0); n.addChild(df.node);
+    const no = this.makeLabel(String(lv.id), 36, unlocked ? '#ff8b5e' : FAINT, unlocked ? '#ffffff' : undefined, 3); no.node.setPosition(-14, 28, 0); n.addChild(no.node);
+    const nm = this.makeLabel(lv.name, 15, unlocked ? '#7a6a58' : FAINT); nm.node.setPosition(0, -2, 0); n.addChild(nm.node);
+    const df = this.makeLabel('难度 ' + lv.difficulty, 15, unlocked ? SUB : FAINT); df.node.setPosition(0, -26, 0); n.addChild(df.node);
     /* 难度条（胶囊底 + /50 封顶） */
     const barW = w - 24;
     const ratio = Math.min(1, lv.difficulty / 50);
@@ -382,9 +382,9 @@ export class Boot extends Component {
     } else {
       const stars = this.save.won[String(lv.id)] || 0;
       for (let k = 0; k < 3; k++) {
-        /* 星星放数字行右侧横排（数字居中不重叠），金色=已得、浅灰=未得 */
-        const st = this.makeSprite(k < stars ? 'icon_star' : 'icon_star_empty', 14, 14, undefined, k < stars ? GOLD : '#d8d0c4');
-        if (st) { st.setPosition(w / 2 - 12 - (2 - k) * 16, 26, 0); n.addChild(st); }
+        /* 星星放右上角竖向错开（数字左置不再冲突），金色=已得、浅灰=未得 */
+        const st = this.makeSprite(k < stars ? 'icon_star' : 'icon_star_empty', 16, 16, undefined, k < stars ? GOLD : '#d8d0c4');
+        if (st) { st.setPosition(w / 2 - 16, h / 2 - 16 - k * 19, 0); n.addChild(st); }
       }
     }
     return n;
@@ -414,10 +414,12 @@ export class Boot extends Component {
     this.cellPx = Math.floor(this.boardPx / n);
     this.boardPx = this.cellPx * n;
 
-    this.infoLabel = this.makeLabel('', 19, '#8a7560');
-    this.infoLabel.node.setPosition(0, H / 2 - 40, 0);
-    const ib = this.makeSprite('infobar', Math.min(W - 40, 520), 54);
-    if (ib) { ib.setPosition(0, H / 2 - 40, 0); this.root.addChild(ib); }
+    /* 信息栏（胶囊底板，右移给双叉让位）+ 猜错双叉内嵌左端——重排后不再挤 */
+    this.infoLabel = this.makeLabel('', 20, '#8a7560');
+    const ibW = Math.min(W - 220, 470);
+    this.infoLabel.node.setPosition(W / 2 - 96 - ibW / 2 + 50, H / 2 - 40, 0);
+    const ib = this.makeSprite('infobar', ibW, 54);
+    if (ib) { ib.setPosition(W / 2 - 96 - ibW / 2 + 50, H / 2 - 40, 0); this.root.addChild(ib); }
     this.root.addChild(this.infoLabel.node);
     /* 猜错计数（两枚叉图标：淡=剩余机会，红=已用） */
     this.failIcons = [];
@@ -925,12 +927,41 @@ export class Boot extends Component {
 
   /* ============ 规则页 / 设置页 ============ */
   private showRules(after: () => void) {
-    this.showOverlay('🐱', '怎么玩', '· 每种颜色住一只猫，每行每列也各一只\n' +
-      '· 两只猫不能挨在一起（斜角也算挨着）\n' +
-      '· 点一下格子：标 ✕（这里没有猫）\n' +
-      '· 再点一下取消；按住拖动连着标\n' +
-      '· 双击：猜猫在这！猜错 2 次就输\n' +
-      '· 卡住了就点「提示」', () => { after(); }, '知道了', true, 'title_rules');
+    const { width: W } = this.viewSize();
+    const mask = this.makeMask(true);
+    const card = this.cardShell(mask, Math.min(460, W - 40), 460);
+    const av = this.makeSprite('cat_idle', 70, 78);
+    if (av) { av.setPosition(0, 168, 0); card.addChild(av); }
+    const tw = this.makeSprite('title_rules', 210, 57);
+    if (tw) { tw.setPosition(0, 104, 0); card.addChild(tw); }
+    else { const t = this.makeLabel('怎么玩', 28, INK); t.node.setPosition(0, 104, 0); card.addChild(t.node); }
+    /* 六条规则：马卡龙色数字徽章 + 短文案 */
+    const lines: [string, string, string][] = [
+      ['1', '每种颜色住一只猫，每行每列也各一只', '#ffcf5c'],
+      ['2', '两只猫不能挨在一起（斜角也算）', '#f5a9a0'],
+      ['3', '点格子标 ✕（这里没有猫）', '#b8e6b0'],
+      ['4', '再点取消；按住拖动连着标', '#aed6f5'],
+      ['5', '双击：猜猫在这！猜错 2 次就输', '#d9c4ee'],
+      ['6', '卡住了就点「提示」', '#f9c895'],
+    ];
+    lines.forEach((ln, k) => {
+      const y = 56 - k * 40;
+      const [num, text, color] = ln;
+      const bd = this.uiNode('badge'); bd.addComponent(UITransform).setContentSize(30, 30);
+      const bg = bd.addComponent(Graphics);
+      const [r, g, b] = this.hexColor(color);
+      bg.fillColor = new Color(r, g, b, 255); bg.circle(0, 0, 15); bg.fill();
+      bg.lineWidth = 3; bg.strokeColor = new Color(255, 255, 255, 255); bg.circle(0, 0, 15); bg.stroke();
+      const nb = this.makeLabel(num, 16, '#ffffff'); nb.node.setPosition(0, 0, 0); bd.addChild(nb.node);
+      bd.setPosition(-146, y, 0); card.addChild(bd);
+      const lb = this.makeLabel(text, 17, '#6b5b4e');
+      lb.horizontalAlign = Label.HorizontalAlign.LEFT;
+      lb.node.getComponent(UITransform)!.setAnchorPoint(0, 0.5);
+      lb.node.setPosition(-128, y, 0); card.addChild(lb.node);
+    });
+    card.addChild(this.makeButton('知道了', new Vec3(0, -186, 0), () => { this.dismissMask(mask); after(); }, { accent: true }));
+    card.setScale(0.6, 0.6, 1);
+    tween(card).to(0.26, { scale: new Vec3(1, 1, 1) }, { easing: 'backOut' }).start();
   }
 
   private showSettings() {
@@ -1041,13 +1072,18 @@ export class Boot extends Component {
     n.layer = Layers.Enum.UI_2D;
     return n;
   }
-  private makeLabel(text: string, size: number, color: string): Label {
+  private makeLabel(text: string, size: number, color: string, outline?: string, outlineW = 2): Label {
     const n = this.uiNode('label');
     n.addComponent(UITransform);
     const lb = n.addComponent(Label);
     if (this.uiFont) lb.font = this.uiFont;   /* 卡通字体（站酷快乐体子集），未加载完回退系统字 */
     lb.string = text; lb.fontSize = size; lb.lineHeight = size * 1.3;
     lb.color = new Color(this.hexColor(color)[0], this.hexColor(color)[1], this.hexColor(color)[2], 255);
+    if (outline) {
+      const lo = lb.addComponent(LabelOutline);
+      lo.color = new Color(this.hexColor(outline)[0], this.hexColor(outline)[1], this.hexColor(outline)[2], 255);
+      lo.width = outlineW;
+    }
     return lb;
   }
   private makeSprite(img: string, w: number, h: number, name?: string, tint?: string): Node | null {
@@ -1083,7 +1119,7 @@ export class Boot extends Component {
       const ic = this.makeSprite(opts.icon, 20, 20);
       if (ic) { ic.setPosition(-w / 2 + 28, 0, 0); n.addChild(ic); lx = 10; }
     }
-    const lb = this.makeLabel(text, 20, opts.accent ? '#6b4a00' : '#6b5b4e');
+    const lb = this.makeLabel(text, 20, '#ffffff', '#6b5b4e', 2);
     lb.node.setPosition(lx, 0, 0);
     n.addChild(lb.node);
     n.setPosition(pos.x, pos.y, pos.z);
