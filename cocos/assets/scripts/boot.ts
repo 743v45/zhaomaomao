@@ -224,9 +224,12 @@ export class Boot extends Component {
     const bg = this.uiNode('bg');
     bg.addComponent(UITransform).setContentSize(W, H);
     const sp = bg.addComponent(Sprite);
-    sp.spriteFrame = f;
     sp.type = Sprite.Type.TILED;
     sp.sizeMode = Sprite.SizeMode.CUSTOM;
+    sp.spriteFrame = f;
+    bg.getComponent(UITransform)!.setContentSize(W, H);   /* frame 会触发 TRIMMED 尺寸重置，尺寸必须在其后定 */
+    const bop = bg.addComponent(UIOpacity);
+    bop.opacity = 153;                                    /* 爪印调淡至 60%：氛围铺垫不抢卡片 */
     this.root.insertChild(bg, 0);
   }
 
@@ -255,7 +258,7 @@ export class Boot extends Component {
       const label = this.makeLabel('猫棋', 46, INK); label.node.setPosition(-16, 0, 0); titleRow.addChild(label.node);
     }
     const sub = this.makeLabel('每种颜色住一只猫 · 双击猜猫，猜错 2 次就输', 20, SUB);
-    sub.node.setPosition(0, H / 2 - 162, 0);
+    sub.node.setPosition(0, H / 2 - 150, 0);
     this.root.addChild(sub.node);
 
     /* 右上角：玩法 / 设置（贴图圆钮，无 emoji） */
@@ -269,11 +272,11 @@ export class Boot extends Component {
     /* 总进度（通关 X/100 · ★ Y/300）+ 继续按钮 */
     const total = LEVELS.length, won = this.wonCount(), stars = this.totalStars();
     const prog = this.makeLabel(`已通关 ${won}/${total} · ★ ${stars}/${total * 3}`, 18, SUB);
-    prog.node.setPosition(0, H / 2 - 202, 0);
+    prog.node.setPosition(0, H / 2 - 188, 0);
     this.root.addChild(prog.node);
     const next = this.firstUnfinished();
     if (next) {
-      const cont = this.makeButton(`继续 · 第 ${next.id} 关`, new Vec3(0, H / 2 - 250, 0), () => this.enterLevel(next.id), { accent: true, w: 220 });
+      const cont = this.makeButton(`继续 · 第 ${next.id} 关`, new Vec3(0, H / 2 - 236, 0), () => this.enterLevel(next.id), { accent: true, w: 220 });
       this.root.addChild(cont);
     }
 
@@ -419,16 +422,16 @@ export class Boot extends Component {
     /* 信息栏（胶囊底板，右移给双叉让位）+ 猜错双叉内嵌左端——重排后不再挤 */
     this.infoLabel = this.makeLabel('', 20, '#8a7560');
     const ibW = Math.min(W - 220, 470);
-    this.infoLabel.node.setPosition(W / 2 - 96 - ibW / 2 + 50, H / 2 - 40, 0);
+    this.infoLabel.node.setPosition(W / 2 - 96 - ibW / 2 + 50, H / 2 - 34, 0);
     const ib = this.makeSprite('infobar', ibW, 54);
-    if (ib) { ib.setPosition(W / 2 - 96 - ibW / 2 + 50, H / 2 - 40, 0); this.root.addChild(ib); }
+    if (ib) { ib.setPosition(W / 2 - 96 - ibW / 2 + 50, H / 2 - 34, 0); this.root.addChild(ib); }
     this.root.addChild(this.infoLabel.node);
     /* 猜错计数（两枚叉图标：淡=剩余机会，红=已用） */
     this.failIcons = [];
     for (let k = 0; k < 2; k++) {
       const ic = this.makeSprite('icon_cross', 20, 20);
       if (ic) {
-        ic.setPosition(-W / 2 + 52 + k * 26, H / 2 - 40, 0);
+        ic.setPosition(-W / 2 + 52 + k * 26, H / 2 - 34, 0);
         const sp = ic.getComponent(Sprite) as Sprite;
         sp.color = new Color(216, 205, 190, 255);
         const op = ic.addComponent(UIOpacity); op.opacity = 70;
@@ -438,9 +441,9 @@ export class Boot extends Component {
     }
 
     /* 工具栏（贴图按钮，滑入 stagger） */
-    const btnBack = this.makeButton('列表', new Vec3(-W / 2 + 82, H / 2 - 85, 0), () => this.showList(), { icon: 'icon_back', w: 132 });
-    const btnReset = this.makeButton('重置', new Vec3(0, H / 2 - 85, 0), () => { this.enterLevel(this.level.id); }, { icon: 'icon_reset', w: 116 });
-    const btnHint = this.makeButton('提示', new Vec3(W / 2 - 82, H / 2 - 85, 0), () => this.showHint(), { accent: true, w: 116 });
+    const btnBack = this.makeButton('列表', new Vec3(-W / 2 + 82, H / 2 - 96, 0), () => this.showList(), { icon: 'icon_back', w: 132 });
+    const btnReset = this.makeButton('重置', new Vec3(0, H / 2 - 96, 0), () => { this.enterLevel(this.level.id); }, { icon: 'icon_reset', w: 116 });
+    const btnHint = this.makeButton('提示', new Vec3(W / 2 - 82, H / 2 - 96, 0), () => this.showHint(), { accent: true, w: 116 });
     [btnBack, btnReset, btnHint].forEach((b, k) => {
       const y0 = b.position.y;
       b.setPosition(b.position.x, y0 + 46, 0);
@@ -1111,6 +1114,7 @@ export class Boot extends Component {
     if (normal) {
       sp.type = Sprite.Type.SIMPLE; sp.sizeMode = Sprite.SizeMode.CUSTOM;
       sp.spriteFrame = normal;
+      n.getComponent(UITransform)!.setContentSize(w, h);
     } else {
       const g = n.addComponent(Graphics);
       g.fillColor = opts.accent ? new Color(255, 157, 104, 255) : new Color(255, 255, 255, 255);
