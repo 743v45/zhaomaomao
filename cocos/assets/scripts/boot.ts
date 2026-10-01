@@ -382,8 +382,9 @@ export class Boot extends Component {
     } else {
       const stars = this.save.won[String(lv.id)] || 0;
       for (let k = 0; k < 3; k++) {
-        const st = this.makeSprite(k < stars ? 'icon_star' : 'icon_star_empty', 18, 18, undefined, k < stars ? GOLD : undefined);
-        if (st) { st.setPosition(w / 2 - 40 + k * 21, h / 2 - 17, 0); n.addChild(st); }
+        /* 星星放数字行右侧横排（数字居中不重叠），金色=已得、浅灰=未得 */
+        const st = this.makeSprite(k < stars ? 'icon_star' : 'icon_star_empty', 14, 14, undefined, k < stars ? GOLD : '#d8d0c4');
+        if (st) { st.setPosition(w / 2 - 12 - (2 - k) * 16, 26, 0); n.addChild(st); }
       }
     }
     return n;
