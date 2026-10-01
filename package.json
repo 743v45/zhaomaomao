@@ -12,7 +12,7 @@
     "docs": "node engine/cli.js docs && node engine/cli.js index",
     "build": "node engine/cli.js build",
     "build-cocos": "node engine/cli.js build-cocos",
-    "build-cocos-web": "python3 scripts/fix-img-meta.py && ~/Applications/CocosCreator.app/Contents/MacOS/CocosCreator --project \"$PWD/cocos\" --build \"platform=web-mobile;debug=false\"",
+    "build-cocos-web": "bash scripts/build-cocos-web.sh",
     "cocos-smoke": "node scripts/cocos-smoke.mjs",
     "serve": "python3 -m http.server 8137",
     "web-smoke": "node scripts/web-smoke.mjs",

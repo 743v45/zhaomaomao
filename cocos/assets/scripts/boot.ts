@@ -24,7 +24,9 @@ const IMG = ['btn_normal', 'btn_pressed', 'btn_accent', 'btn_accent_pressed', 'b
   'logo', 'title_win', 'title_rules', 'title_settings', 'title_fail',
   'lock', 'capsule', 'infobar', 'cat_v2', 'cat_v3', 'cat_v4', 'board_frame', 'board_bg_soft',
   'cloud_1', 'cloud_2', 'cloud_3', 'prop_yarn', 'prop_fish', 'prop_milk', 'confetti_sheet',
-  'banner_xiaoyuan', 'banner_jiequ', 'banner_gongyuan', 'banner_jieshi', 'banner_maodu'];
+  'banner_xiaoyuan', 'banner_jiequ', 'banner_gongyuan', 'banner_jieshi', 'banner_maodu',
+  'tile_white', 'tile_depth', 'hl_gold', 'ring_gold', 'flash_red',
+  'card_level', 'toast_dark', 'shadow_cat', 'row_setting'];
 
 /* 柔和化 24 色板（CIELab 降饱和提亮，区分度硬约束 ≥90%），与引擎 PALETTE 同序 */
 const SOFT_PALETTE = ['#F7CAD5', '#FDE592', '#BDE7B5', '#B4D8F5', '#DBC7EF', '#F9C895', '#A6DAD6', '#F5AFA6', '#C7E997', '#A3C8E8', '#F8E8B8', '#D8E9CB', '#EAC7B9', '#C9CBEF', '#F3B782', '#AEE1C9', '#F2B4CC', '#E9DFB9', '#BDCFE0', '#E4CADE', '#FCD6B4', '#D2E9DC', '#E9D3F1', '#F9E4CB'];
@@ -341,11 +343,17 @@ export class Boot extends Component {
     const unlocked = this.isUnlocked(lv.id);
     const n = this.uiNode('card');
     n.addComponent(UITransform).setContentSize(w, h);
-    const g = n.addComponent(Graphics);
-    g.fillColor = unlocked ? new Color(255, 255, 255, 255) : new Color(244, 238, 229, 150);
-    g.roundRect(-w / 2, -h / 2, w, h, 10); g.fill();
-    g.lineWidth = 2; g.strokeColor = unlocked ? new Color(240, 223, 200, 255) : new Color(226, 214, 196, 120);
-    g.roundRect(-w / 2, -h / 2, w, h, 10); g.stroke();
+    const cardBg = this.makeSprite('card_level', w, h, 'card-bg');
+    if (!cardBg) {
+      const g = n.addComponent(Graphics);
+      g.fillColor = unlocked ? new Color(255, 255, 255, 255) : new Color(244, 238, 229, 150);
+      g.roundRect(-w / 2, -h / 2, w, h, 10); g.fill();
+      g.lineWidth = 2; g.strokeColor = unlocked ? new Color(240, 223, 200, 255) : new Color(226, 214, 196, 120);
+      g.roundRect(-w / 2, -h / 2, w, h, 10); g.stroke();
+    } else if (!unlocked) {
+      const sp = cardBg.getComponent(Sprite) as Sprite;
+      sp.color = new Color(228, 222, 212, 255);   /* 锁定卡整体压灰 */
+    }
     const no = this.makeLabel(String(lv.id), 30, unlocked ? INK : FAINT); no.node.setPosition(0, 26, 0); n.addChild(no.node);
     const nm = this.makeLabel(lv.name, 14, unlocked ? SUB : FAINT); nm.node.setPosition(0, 0, 0); n.addChild(nm.node);
     const df = this.makeLabel('难度 ' + lv.difficulty, 14, unlocked ? SUB : FAINT); df.node.setPosition(0, -24, 0); n.addChild(df.node);
@@ -442,7 +450,7 @@ export class Boot extends Component {
     const g = board.addComponent(Graphics);
     g.fillColor = new Color(107, 91, 78, 255);
     g.roundRect(-this.boardPx / 2 - 3, -this.boardPx / 2 - 3, this.boardPx + 6, this.boardPx + 6, 6); g.fill();
-    /* 柔和底纹：作为 board 的兄弟节点垫在下层（子节点会盖住父 Graphics） */
+    /* 柔和底纹：作为 board 的兄弟节点垫在下层（子节点会盖住父 Graphics），缝隙处透出波点 */
     const bgs = this.makeSprite('board_bg_soft', this.boardPx, this.boardPx);
     if (bgs) {
       bgs.setPosition(0, -30, 0);
@@ -450,21 +458,30 @@ export class Boot extends Component {
     }
     for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
       const i = r * n + c;
-      const [hexR, hexG, hexB] = this.hexColor(SOFT_PALETTE[this.level.regionColors[this.level.regions[i]]] || CatChess.PALETTE[this.level.regionColors[this.level.regions[i]]][0]);
       const cx = -this.boardPx / 2 + this.cellPx * (c + 0.5), cy = this.boardPx / 2 - this.cellPx * (r + 0.5);
-      g.fillColor = new Color(hexR, hexG, hexB, 255);
-      g.fillRect(cx - this.cellPx / 2, cy - this.cellPx / 2, this.cellPx, this.cellPx);
-      g.lineWidth = 0.5; g.strokeColor = new Color(107, 91, 78, 70);
-      g.rect(cx - this.cellPx / 2, cy - this.cellPx / 2, this.cellPx, this.cellPx); g.stroke();
+      /* 区块边界：深棕圆头线画在缝隙处（父层，格子贴图之下不遮挡） */
       const isBr = c + 1 < n && this.level.regions[i] !== this.level.regions[i + 1];
       const isBb = r + 1 < n && this.level.regions[i] !== this.level.regions[i + n];
-      g.lineWidth = 2.5; g.strokeColor = new Color(107, 91, 78, 255);
-      if (isBr) { g.moveTo(cx + this.cellPx / 2, cy - this.cellPx / 2); g.lineTo(cx + this.cellPx / 2, cy + this.cellPx / 2); g.stroke(); }
-      if (isBb) { g.moveTo(cx - this.cellPx / 2, cy - this.cellPx / 2); g.lineTo(cx + this.cellPx / 2, cy - this.cellPx / 2); g.stroke(); }
-      /* 逻辑格：只挂 UITransform，无渲染组件（惰性件按需创建） */
+      g.lineWidth = 2; g.strokeColor = new Color(74, 63, 53, 200); g.lineCap = Graphics.LineCap.ROUND;
+      if (isBr) { g.moveTo(cx + this.cellPx / 2, cy - this.cellPx / 2 + 3); g.lineTo(cx + this.cellPx / 2, cy + this.cellPx / 2 - 3); g.stroke(); }
+      if (isBb) { g.moveTo(cx - this.cellPx / 2 + 3, cy - this.cellPx / 2); g.lineTo(cx + this.cellPx / 2 - 3, cy - this.cellPx / 2); g.stroke(); }
+      /* 逻辑格：tile 贴图染色挂其下，✕/猫/高亮惰性挂其上 */
       const cell = this.uiNode('cell');
       cell.addComponent(UITransform).setContentSize(this.cellPx, this.cellPx);
       cell.setPosition(cx, cy, 0);
+      const pal = SOFT_PALETTE[this.level.regionColors[this.level.regions[i]]];
+      const tile = this.makeSprite('tile_white', this.cellPx - 4, this.cellPx - 4, 'tile');
+      if (tile && pal) {
+        const tsp = tile.getComponent(Sprite) as Sprite;
+        const [tr, tg, tb] = this.hexColor(pal);
+        tsp.color = new Color(tr, tg, tb, 255);
+        cell.addChild(tile);
+      } else {
+        const cg = cell.addComponent(Graphics);
+        const [hexR, hexG, hexB] = this.hexColor(pal || CatChess.PALETTE[this.level.regionColors[this.level.regions[i]]][0]);
+        cg.fillColor = new Color(hexR, hexG, hexB, 255);
+        cg.fillRect(-this.cellPx / 2, -this.cellPx / 2, this.cellPx, this.cellPx); cg.fill();
+      }
       board.addChild(cell);
       this.cells.push({ node: cell, xIcon: null, hl: null, r, c });
     }
@@ -589,14 +606,17 @@ export class Boot extends Component {
       x.setScale(1, 1, 1);
     }
   }
-  private hlAt(i: number): { node: Node; op: UIOpacity } {   /* 提示高亮惰性创建 */
+  private hlAt(i: number): { node: Node; op: UIOpacity } {   /* 提示高亮惰性创建（金色框贴图，缺图回退色块） */
     const cell = this.cells[i];
     if (!cell.hl) {
-      const hl = this.uiNode('hl');
-      hl.addComponent(UITransform).setContentSize(this.cellPx, this.cellPx);
-      const g = hl.addComponent(Graphics);
-      g.fillColor = new Color(255, 207, 92, 110);
-      g.fillRect(-this.cellPx / 2, -this.cellPx / 2, this.cellPx, this.cellPx); g.fill();
+      let hl = this.makeSprite('hl_gold', this.cellPx - 8, this.cellPx - 8, 'hl');
+      if (!hl) {
+        hl = this.uiNode('hl');
+        hl.addComponent(UITransform).setContentSize(this.cellPx, this.cellPx);
+        const g = hl.addComponent(Graphics);
+        g.fillColor = new Color(255, 207, 92, 110);
+        g.fillRect(-this.cellPx / 2, -this.cellPx / 2, this.cellPx, this.cellPx); g.fill();
+      }
       const op = hl.addComponent(UIOpacity);
       cell.node.addChild(hl);
       cell.hl = hl;
@@ -628,14 +648,20 @@ export class Boot extends Component {
     const cell = this.cells[i];
     const old = cell.node.getChildByName('cat');
     if (old) old.destroy();
-    /* 阴影：暖棕椭圆，把猫从同系色块上托出来 */
-    const shadow = this.uiNode('cat-shadow');
-    shadow.addComponent(UITransform).setContentSize(this.cellPx * 0.72, this.cellPx * 0.18);
-    const sg = shadow.addComponent(Graphics);
-    sg.fillColor = new Color(107, 91, 78, 40);
-    sg.ellipse(0, 0, this.cellPx * 0.36, this.cellPx * 0.09); sg.fill();
-    shadow.setPosition(0, -this.cellPx * 0.3, 0);
-    cell.node.addChild(shadow);
+    /* 阴影：径向渐变贴图（缺图回退 Graphics 椭圆），把猫从同系色块上托出来 */
+    const shadow = this.makeSprite('shadow_cat', this.cellPx * 0.78, this.cellPx * 0.26, 'cat-shadow');
+    if (shadow) {
+      shadow.setPosition(0, -this.cellPx * 0.3, 0);
+      cell.node.addChild(shadow);
+    } else {
+      const sg0 = this.uiNode('cat-shadow-g');
+      sg0.addComponent(UITransform).setContentSize(this.cellPx * 0.72, this.cellPx * 0.18);
+      const sg = sg0.addComponent(Graphics);
+      sg.fillColor = new Color(107, 91, 78, 40);
+      sg.ellipse(0, 0, this.cellPx * 0.36, this.cellPx * 0.09); sg.fill();
+      sg0.setPosition(0, -this.cellPx * 0.3, 0);
+      cell.node.addChild(sg0);
+    }
     const cat = this.makeSprite('cat_idle', this.cellPx * 0.8, this.cellPx * 0.8, 'cat');
     if (cat) {
       /* 按区块序号分配毛色变体，告别六胞胎 */
@@ -664,15 +690,23 @@ export class Boot extends Component {
         .to(0.85, { scale: new Vec3(0.86, 0.9, 1) }, { easing: 'sineInOut' })
         .to(0.85, { scale: new Vec3(0.8, 0.8, 1) }, { easing: 'sineInOut' }))
       .start();
-    const ring = this.uiNode('ring');
-    ring.addComponent(UITransform).setContentSize(this.cellPx, this.cellPx);
-    const rg = ring.addComponent(Graphics);
-    rg.lineWidth = 3; rg.strokeColor = new Color(255, 209, 102, 255);
-    rg.circle(0, 0, this.cellPx * 0.36); rg.stroke();
-    const rop = ring.addComponent(UIOpacity);
-    cell.node.addChild(ring);
-    tween(ring).to(0.4, { scale: new Vec3(1.9, 1.9, 1) }).start();
-    tween(rop).delay(0.25).to(0.2, { opacity: 0 }).call(() => ring.destroy()).start();
+    const ring = this.makeSprite('ring_gold', this.cellPx * 0.92, this.cellPx * 0.92, 'ring');
+    if (ring) {
+      const rop = ring.addComponent(UIOpacity);
+      cell.node.addChild(ring);
+      tween(ring).to(0.4, { scale: new Vec3(1.9, 1.9, 1) }).start();
+      tween(rop).delay(0.25).to(0.2, { opacity: 0 }).call(() => ring.destroy()).start();
+    } else {
+      const ring2 = this.uiNode('ring');
+      ring2.addComponent(UITransform).setContentSize(this.cellPx, this.cellPx);
+      const rg = ring2.addComponent(Graphics);
+      rg.lineWidth = 3; rg.strokeColor = new Color(255, 209, 102, 255);
+      rg.circle(0, 0, this.cellPx * 0.36); rg.stroke();
+      const rop2 = ring2.addComponent(UIOpacity);
+      cell.node.addChild(ring2);
+      tween(ring2).to(0.4, { scale: new Vec3(1.9, 1.9, 1) }).start();
+      tween(rop2).delay(0.25).to(0.2, { opacity: 0 }).call(() => ring2.destroy()).start();
+    }
   }
   private animWrong(i: number) {         /* 判错：格子抖动 + 红闪 + 系统✕ */
     const cell = this.cells[i];
@@ -681,14 +715,21 @@ export class Boot extends Component {
       .repeat(4, tween(cell.node).to(0.05, { position: new Vec3(x0 + 4, cell.node.position.y, 0) }).to(0.05, { position: new Vec3(x0 - 4, cell.node.position.y, 0) }))
       .to(0.05, { position: new Vec3(x0, cell.node.position.y, 0) })
       .start();
-    const flash = this.uiNode('flash');
-    flash.addComponent(UITransform).setContentSize(this.cellPx, this.cellPx);
-    const fgc = flash.addComponent(Graphics);
-    fgc.fillColor = new Color(229, 83, 60, 120);
-    fgc.fillRect(-this.cellPx / 2, -this.cellPx / 2, this.cellPx, this.cellPx); fgc.fill();
-    cell.node.addChild(flash);
-    const op = flash.addComponent(UIOpacity);
-    tween(op).delay(0.25).to(0.2, { opacity: 0 }).call(() => flash.destroy()).start();
+    const flash = this.makeSprite('flash_red', this.cellPx - 6, this.cellPx - 6, 'flash');
+    if (flash) {
+      cell.node.addChild(flash);
+      const fop = flash.addComponent(UIOpacity);
+      tween(fop).delay(0.25).to(0.2, { opacity: 0 }).call(() => flash.destroy()).start();
+    } else {
+      const flash2 = this.uiNode('flash');
+      flash2.addComponent(UITransform).setContentSize(this.cellPx, this.cellPx);
+      const fgc = flash2.addComponent(Graphics);
+      fgc.fillColor = new Color(229, 83, 60, 120);
+      fgc.fillRect(-this.cellPx / 2, -this.cellPx / 2, this.cellPx, this.cellPx); fgc.fill();
+      cell.node.addChild(flash2);
+      const op = flash2.addComponent(UIOpacity);
+      tween(op).delay(0.25).to(0.2, { opacity: 0 }).call(() => flash2.destroy()).start();
+    }
     this.markX(i, false);
   }
   private setCatsState(state: 'happy' | 'hurt' | 'dead') {   /* 胜/负时全猫换状态（缺图降级变形+星星标记） */
@@ -875,8 +916,12 @@ export class Boot extends Component {
     const rowBtns: Node[] = [];
     const mkRow = (y: number): Node => {
       const row = this.uiNode('row'); row.addComponent(UITransform).setContentSize(360, 52); row.setPosition(0, y, 0); card.addChild(row);
-      const rg = row.addComponent(Graphics);
-      rg.fillColor = new Color(247, 242, 234, 255); rg.roundRect(-180, -26, 360, 52, 12); rg.fill();
+      const rowBg = this.makeSprite('row_setting', 360, 52, 'row-bg');
+      if (rowBg) row.addChild(rowBg);
+      else {
+        const rg = row.addComponent(Graphics);
+        rg.fillColor = new Color(247, 242, 234, 255); rg.roundRect(-180, -26, 360, 52, 12); rg.fill();
+      }
       rowBtns.push(row);
       return row;
     };
@@ -916,9 +961,21 @@ export class Boot extends Component {
     const rstRow = mkRow(-136);
     const redrawRst = () => {
       rstRow.removeAllChildren();
-      const rg2 = rstRow.getComponent(Graphics) as Graphics;
-      rg2.fillColor = armed ? new Color(229, 83, 60, 255) : new Color(247, 242, 234, 255);
-      rg2.roundRect(-180, -26, 360, 52, 12); rg2.fill();
+      if (armed) {
+        const rgN = this.uiNode('rst-armed'); rgN.addComponent(UITransform).setContentSize(360, 52);
+        const rg2 = rgN.addComponent(Graphics);
+        rg2.fillColor = new Color(229, 83, 60, 255); rg2.roundRect(-180, -26, 360, 52, 12); rg2.fill();
+        rstRow.addChild(rgN);
+      } else {
+        const rowBg = this.makeSprite('row_setting', 360, 52, 'row-bg');
+        if (rowBg) rstRow.addChild(rowBg);
+        else {
+          const rg2 = this.uiNode('rst-bg'); rg2.addComponent(UITransform).setContentSize(360, 52);
+          const g2 = rg2.addComponent(Graphics);
+          g2.fillColor = new Color(247, 242, 234, 255); g2.roundRect(-180, -26, 360, 52, 12); g2.fill();
+          rstRow.addChild(rg2);
+        }
+      }
       const lb = this.makeLabel(armed ? '再按一次确认清空' : '重置全部进度', 21, armed ? '#ffffff' : '#6b5b4e');
       lb.node.setPosition(0, 0, 0); rstRow.addChild(lb.node);
     };
@@ -1117,9 +1174,13 @@ export class Boot extends Component {
     const { height: H } = this.viewSize();
     const t = this.uiNode('toast');
     t.addComponent(UITransform).setContentSize(360, 48);
-    const g = t.addComponent(Graphics);
-    g.fillColor = new Color(60, 46, 32, 210);
-    g.roundRect(-180, -24, 360, 48, 24); g.fill();
+    const tb = this.makeSprite('toast_dark', 360, 48);
+    if (tb) t.addChild(tb);
+    else {
+      const g = t.addComponent(Graphics);
+      g.fillColor = new Color(60, 46, 32, 210);
+      g.roundRect(-180, -24, 360, 48, 24); g.fill();
+    }
     const lb = this.makeLabel(text, 18, '#fff8ee');
     lb.node.setPosition(0, 0, 0);
     t.addChild(lb.node);
