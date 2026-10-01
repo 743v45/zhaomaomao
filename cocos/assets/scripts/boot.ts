@@ -26,18 +26,19 @@ const IMG = ['btn_normal', 'btn_pressed', 'btn_accent', 'btn_accent_pressed', 'b
   'cloud_1', 'cloud_2', 'cloud_3', 'prop_yarn', 'prop_fish', 'prop_milk', 'confetti_sheet',
   'banner_xiaoyuan', 'banner_jiequ', 'banner_gongyuan', 'banner_jieshi', 'banner_maodu',
   'tile_white', 'tile_depth', 'hl_gold', 'ring_gold', 'flash_red',
-  'card_level', 'toast_dark', 'shadow_cat', 'row_setting', 'mark_x'];
+  'card_level', 'toast_dark', 'shadow_cat', 'row_setting', 'mark_x',
+  'card_green', 'card_blue', 'card_pink', 'card_yellow', 'card_gold'];
 
 /* 柔和化 24 色板（CIELab 降饱和提亮，区分度硬约束 ≥90%），与引擎 PALETTE 同序 */
 const SOFT_PALETTE = ['#F7CAD5', '#FDE592', '#BDE7B5', '#B4D8F5', '#DBC7EF', '#F9C895', '#A6DAD6', '#F5AFA6', '#C7E997', '#A3C8E8', '#F8E8B8', '#D8E9CB', '#EAC7B9', '#C9CBEF', '#F3B782', '#AEE1C9', '#F2B4CC', '#E9DFB9', '#BDCFE0', '#E4CADE', '#FCD6B4', '#D2E9DC', '#E9D3F1', '#F9E4CB'];
 
 /* 章节分组（关卡名前缀对应） */
 const CHAPTERS = [
-  { from: 1, to: 20, img: 'banner_xiaoyuan' },
-  { from: 21, to: 45, img: 'banner_jiequ' },
-  { from: 46, to: 72, img: 'banner_gongyuan' },
-  { from: 73, to: 99, img: 'banner_jieshi' },
-  { from: 100, to: 100, img: 'banner_maodu' },
+  { from: 1, to: 20, img: 'banner_xiaoyuan', card: 'card_green' },
+  { from: 21, to: 45, img: 'banner_jiequ', card: 'card_blue' },
+  { from: 46, to: 72, img: 'banner_gongyuan', card: 'card_pink' },
+  { from: 73, to: 99, img: 'banner_jieshi', card: 'card_yellow' },
+  { from: 100, to: 100, img: 'banner_maodu', card: 'card_gold' },
 ];
 const CAT_STATES = ['cat_idle', 'cat_happy', 'cat_hurt', 'cat_dead'];
 const SFX = ['click', 'tick', 'place', 'error', 'hint', 'star', 'win', 'lose', 'meow', 'toggle', 'bgm'];
@@ -344,7 +345,8 @@ export class Boot extends Component {
     const unlocked = this.isUnlocked(lv.id);
     const n = this.uiNode('card');
     n.addComponent(UITransform).setContentSize(w, h);
-    const cardBg = this.makeSprite('card_level', w, h, 'card-bg');
+    const chapter = CHAPTERS.find(c => lv.id >= c.from && lv.id <= c.to);
+    const cardBg = this.makeSprite(chapter ? chapter.card : 'card_level', w, h, 'card-bg');
     if (!cardBg) {
       const g = n.addComponent(Graphics);
       g.fillColor = unlocked ? new Color(255, 255, 255, 255) : new Color(244, 238, 229, 150);
@@ -353,7 +355,7 @@ export class Boot extends Component {
       g.roundRect(-w / 2, -h / 2, w, h, 10); g.stroke();
     } else if (!unlocked) {
       const sp = cardBg.getComponent(Sprite) as Sprite;
-      sp.color = new Color(228, 222, 212, 255);   /* 锁定卡整体压灰 */
+      sp.color = new Color(232, 226, 216, 200);   /* 锁定卡轻压降存在感 */
     }
     const no = this.makeLabel(String(lv.id), 36, unlocked ? '#ff8b5e' : FAINT, unlocked ? '#ffffff' : undefined, 3); no.node.setPosition(-14, 28, 0); n.addChild(no.node);
     const nm = this.makeLabel(lv.name, 15, unlocked ? '#7a6a58' : FAINT); nm.node.setPosition(0, -2, 0); n.addChild(nm.node);
