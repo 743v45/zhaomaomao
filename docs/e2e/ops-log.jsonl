@@ -1,0 +1,60 @@
+{"t":"0.31s","action":"TC0 启动","url":"http://localhost:8137/cocos/build/web-mobile/index.html"}
+{"t":"9.31s","action":"视口换算","visibleSize":[704,1280],"scale":1.25}
+{"t":"9.31s","action":"TC1 首启规则页"}
+{"t":"9.62s","action":"截图","file":"docs/screenshots/e2e-01-01-rules-first.png"}
+{"t":"9.62s","action":"点击","x":440,"y":990,"target":"知道了按钮"}
+{"t":"10.59s","action":"截图","file":"docs/screenshots/e2e-02-02-list-after-rules.png"}
+{"t":"10.59s","action":"TC2 列表布局与导航"}
+{"t":"10.59s","action":"点击","x":750,"y":58,"target":"玩法按钮"}
+{"t":"11.49s","action":"截图","file":"docs/screenshots/e2e-03-03-rules-again.png"}
+{"t":"11.49s","action":"点击","x":80,"y":300,"target":"遮罩空白处"}
+{"t":"12.16s","action":"TC2 翻页前置","bottomBtns":[[604,50]]}
+{"t":"12.16s","action":"点击","x":755,"y":1538,"target":"下一页"}
+{"t":"13.23s","action":"截图","file":"docs/screenshots/e2e-04-04-page2.png"}
+{"t":"13.24s","action":"点击","x":125,"y":1538,"target":"上一页"}
+{"t":"14.09s","action":"TC3 点卡进关"}
+{"t":"14.09s","action":"点击","x":113,"y":443,"target":"第 1 关卡片"}
+{"t":"15.26s","action":"截图","file":"docs/screenshots/e2e-05-05-board-fresh.png"}
+{"t":"15.26s","action":"TC4 笔记与判错"}
+{"t":"15.26s","action":"点击","x":255,"y":651,"target":"格(1,1)单击"}
+{"t":"15.75s","action":"重试","why":"首次坐标单击未标 ✕，加长间隔重试"}
+{"t":"15.75s","action":"点击","x":255,"y":651,"target":"格(1,1)单击(重试)"}
+{"t":"16.34s","action":"FINDING","tc":"TC4.1","issue":"真实坐标单击未能标 ✕（鼠标事件未命中或被吞），接口兜底","at":"screen(255,651)"}
+{"t":"16.54s","action":"点击","x":255,"y":651,"target":"格(1,1)再点"}
+{"t":"17.03s","action":"FINDING","tc":"TC4.2","issue":"再点未取消笔记（该次 ✕ 来自接口兜底，坐标路径取消无效——与 TC4.1 坐标未命中同因）","at":"cell(1,1)"}
+{"t":"17.03s","action":"拖动","from":[131,528],"to":[379,528],"target":"格 0→2 连标"}
+{"t":"17.82s","action":"截图","file":"docs/screenshots/e2e-06-06-notes.png"}
+{"t":"18.07s","action":"双击","x":255,"y":528,"target":"错格 1"}
+{"t":"18.92s","action":"FINDING","tc":"TC4.4","issue":"双击错格未判定（鼠标未命中/被吞），接口兜底","at":"screen(255,528)"}
+{"t":"19.45s","action":"截图","file":"docs/screenshots/e2e-07-07-wrong-once.png"}
+{"t":"19.45s","action":"双击","x":379,"y":528,"target":"错格 2"}
+{"t":"20.69s","action":"FINDING","tc":"TC4.5","issue":"第二次双击错格未弹失败层，接口兜底","at":"screen(379,528)"}
+{"t":"21.65s","action":"截图","file":"docs/screenshots/e2e-08-08-fail-overlay.png"}
+{"t":"21.65s","action":"点击","x":440,"y":975,"target":"回到列表"}
+{"t":"22.51s","action":"TC5 通关流"}
+{"t":"22.51s","action":"点击","x":440,"y":313,"target":"继续按钮"}
+{"t":"23.46s","action":"双击","x":750,"y":528,"target":"答案格 5（第 1 猫）"}
+{"t":"24.25s","action":"双击","x":379,"y":651,"target":"答案格 8（第 2 猫）"}
+{"t":"25.03s","action":"双击","x":131,"y":775,"target":"答案格 12（第 3 猫）"}
+{"t":"25.82s","action":"双击","x":626,"y":899,"target":"答案格 22（第 4 猫）"}
+{"t":"26.60s","action":"双击","x":255,"y":1023,"target":"答案格 25（第 5 猫）"}
+{"t":"27.38s","action":"双击","x":503,"y":1146,"target":"答案格 33（第 6 猫）"}
+{"t":"28.17s","action":"FINDING","tc":"TC5","issue":"6 次双击未命中答案格，接口兜底","note":"TC4/TC5 同页面连续操作，坐标路径存在事件被吞现象"}
+{"t":"30.25s","action":"截图","file":"docs/screenshots/e2e-09-09-win-three-stars.png"}
+{"t":"30.25s","action":"点击","x":778,"y":106,"target":"下一关按钮@(778,106)"}
+{"t":"31.19s","action":"FINDING","tc":"TC5","issue":"胜利卡「下一关」坐标点击未进入 L2（probe 取到的按钮位置疑似非目标），接口兜底","at":"screen(622,1195)"}
+{"t":"31.90s","action":"截图","file":"docs/screenshots/e2e-10-10-level2.png"}
+{"t":"31.90s","action":"TC6 提示流"}
+{"t":"32.41s","action":"点击","x":778,"y":106,"target":"提示按钮"}
+{"t":"33.41s","action":"截图","file":"docs/screenshots/e2e-11-11-hint-overlay.png"}
+{"t":"33.41s","action":"点击","x":778,"y":106,"target":"知道了@(778,106)"}
+{"t":"34.29s","action":"截图","file":"docs/screenshots/e2e-12-12-hint-pulse.png"}
+{"t":"38.89s","action":"TC7 设置流"}
+{"t":"39.40s","action":"点击","x":820,"y":58,"target":"设置按钮"}
+{"t":"40.44s","action":"截图","file":"docs/screenshots/e2e-13-13-settings.png"}
+{"t":"40.44s","action":"FINDING","tc":"TC7","issue":"probe 未发现设置行节点（row），设置项交互以截图人审代替","at":"TC7"}
+{"t":"40.44s","action":"点击","x":440,"y":810,"target":"音乐开关"}
+{"t":"40.88s","action":"点击","x":440,"y":810,"target":"音乐开关(还原)"}
+{"t":"41.32s","action":"点击","x":440,"y":970,"target":"重置(第一次)"}
+{"t":"42.09s","action":"截图","file":"docs/screenshots/e2e-14-14-reset-armed.png"}
+{"t":"42.09s","action":"等待 armed 超时","seconds":5.2}

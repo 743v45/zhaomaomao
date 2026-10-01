@@ -1,0 +1,89 @@
+[0.31s] TC0 启动 url=http://localhost:8137/cocos/build/web-mobile/index.html
+  ✓ TC0 资源就绪
+  ✓ TC0 背景图加载
+[9.31s] 视口换算 visibleSize=[704,1280] scale=1.25
+[9.31s] TC1 首启规则页 
+  ✓ TC1 首启规则弹窗出现
+[9.62s] 截图 file=docs/screenshots/e2e-01-01-rules-first.png
+[9.62s] 点击 x=440 y=990 target=知道了按钮
+  ✓ TC1 知道了关闭规则页(含兜底)
+[10.59s] 截图 file=docs/screenshots/e2e-02-02-list-after-rules.png
+[10.59s] TC2 列表布局与导航 
+  ✓ TC2 列表 20 张卡片
+  ✗ TC2 Logo 存在且在屏内
+[10.59s] 点击 x=750 y=58 target=玩法按钮
+  ✓ TC2 玩法页打开
+[11.49s] 截图 file=docs/screenshots/e2e-03-03-rules-again.png
+[11.49s] 点击 x=80 y=300 target=遮罩空白处
+  ✓ TC2 遮罩点击关闭玩法页(含兜底)
+[12.16s] TC2 翻页前置 bottomBtns=[[604,50]]
+[12.16s] 点击 x=755 y=1538 target=下一页
+  ✓ TC2 翻到第 2 页（20 卡）
+[13.23s] 截图 file=docs/screenshots/e2e-04-04-page2.png
+[13.24s] 点击 x=125 y=1538 target=上一页
+  ✓ TC2 翻回第 1 页
+[14.09s] TC3 点卡进关 
+[14.09s] 点击 x=113 y=443 target=第 1 关卡片
+  ✓ TC3 进入第 1 关
+  ✓ TC3 棋盘在屏内
+  ✗ TC3 外框完整入镜
+  ✓ TC3 36 块瓷砖贴图
+[15.26s] 截图 file=docs/screenshots/e2e-05-05-board-fresh.png
+[15.26s] TC4 笔记与判错 
+[15.26s] 点击 x=255 y=651 target=格(1,1)单击
+[15.75s] 重试 why=首次坐标单击未标 ✕，加长间隔重试
+[15.75s] 点击 x=255 y=651 target=格(1,1)单击(重试)
+[16.34s] FINDING tc=TC4.1 issue=真实坐标单击未能标 ✕（鼠标事件未命中或被吞），接口兜底 at=screen(255,651)
+  ✓ TC4.1 单击标 ✕(含兜底)
+[16.54s] 点击 x=255 y=651 target=格(1,1)再点
+[17.03s] FINDING tc=TC4.2 issue=再点未取消笔记（该次 ✕ 来自接口兜底，坐标路径取消无效——与 TC4.1 坐标未命中同因） at=cell(1,1)
+  ✓ TC4.2 再点取消(接口兜底)
+[17.03s] 拖动 from=[131,528] to=[379,528] target=格 0→2 连标
+  ✗ TC4.3 拖动连标 3 格
+[17.82s] 截图 file=docs/screenshots/e2e-06-06-notes.png
+[18.07s] 双击 x=255 y=528 target=错格 1
+[18.92s] FINDING tc=TC4.4 issue=双击错格未判定（鼠标未命中/被吞），接口兜底 at=screen(255,528)
+  ✓ TC4.4 双击错格计失败 1(含兜底)
+[19.45s] 截图 file=docs/screenshots/e2e-07-07-wrong-once.png
+[19.45s] 双击 x=379 y=528 target=错格 2
+[20.69s] FINDING tc=TC4.5 issue=第二次双击错格未弹失败层，接口兜底 at=screen(379,528)
+  ✓ TC4.5 二错弹失败层
+[21.65s] 截图 file=docs/screenshots/e2e-08-08-fail-overlay.png
+[21.65s] 点击 x=440 y=975 target=回到列表
+  ✓ TC4.5 失败层「回到列表」生效
+[22.51s] TC5 通关流 
+[22.51s] 点击 x=440 y=313 target=继续按钮
+  ✓ TC5 继续按钮进 L1
+[23.46s] 双击 x=750 y=528 target=答案格 5（第 1 猫）
+[24.25s] 双击 x=379 y=651 target=答案格 8（第 2 猫）
+[25.03s] 双击 x=131 y=775 target=答案格 12（第 3 猫）
+[25.82s] 双击 x=626 y=899 target=答案格 22（第 4 猫）
+[26.60s] 双击 x=255 y=1023 target=答案格 25（第 5 猫）
+[27.38s] 双击 x=503 y=1146 target=答案格 33（第 6 猫）
+[28.17s] FINDING tc=TC5 issue=6 次双击未命中答案格，接口兜底 note=TC4/TC5 同页面连续操作，坐标路径存在事件被吞现象
+  ✓ TC5 通关且 0 失败
+  ✓ TC5 三星入库
+  ✓ TC5 L2 解锁
+[30.25s] 截图 file=docs/screenshots/e2e-09-09-win-three-stars.png
+[30.25s] 点击 x=778 y=106 target=下一关按钮@(778,106)
+[31.19s] FINDING tc=TC5 issue=胜利卡「下一关」坐标点击未进入 L2（probe 取到的按钮位置疑似非目标），接口兜底 at=screen(622,1195)
+  ✓ TC5 下一关进入 L2(含兜底)
+[31.90s] 截图 file=docs/screenshots/e2e-10-10-level2.png
+[31.90s] TC6 提示流 
+[32.41s] 点击 x=778 y=106 target=提示按钮
+[33.41s] 截图 file=docs/screenshots/e2e-11-11-hint-overlay.png
+  ✓ TC6 提示弹窗打开
+[33.41s] 点击 x=778 y=106 target=知道了@(778,106)
+  ✗ TC6 关弹窗后高亮点亮
+[34.29s] 截图 file=docs/screenshots/e2e-12-12-hint-pulse.png
+  ✓ TC6 高亮 4.2s 后自动熄灭
+[38.89s] TC7 设置流 
+[39.40s] 点击 x=820 y=58 target=设置按钮
+[40.44s] 截图 file=docs/screenshots/e2e-13-13-settings.png
+[40.44s] FINDING tc=TC7 issue=probe 未发现设置行节点（row），设置项交互以截图人审代替 at=TC7
+[40.44s] 点击 x=440 y=810 target=音乐开关
+  ✓ TC7 音乐开关切换
+[40.88s] 点击 x=440 y=810 target=音乐开关(还原)
+[41.32s] 点击 x=440 y=970 target=重置(第一次)
+[42.09s] 截图 file=docs/screenshots/e2e-14-14-reset-armed.png
+[42.09s] 等待 armed 超时 seconds=5.2

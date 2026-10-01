@@ -56,6 +56,7 @@ export class Boot extends Component {
   private failed = false;
   private hints = 0;
   private lastTap = { i: -1, t: 0 };
+  private lastInput = { t: 0, phase: '' };
   private gesture: { i: number; moved: boolean; tapOff?: boolean } | null = null;
   private boardPx = 0;
   private cellPx = 0;
@@ -501,10 +502,18 @@ export class Boot extends Component {
     board.setScale(0.7, 0.7, 1);
     tween(board).to(0.3, { scale: new Vec3(1, 1, 1) }, { easing: 'backOut' }).start();
 
-    board.on(Input.EventType.TOUCH_START, (e: any) => this.onTouch(e, 'start'), this);
-    board.on(Input.EventType.TOUCH_MOVE, (e: any) => this.onTouch(e, 'move'), this);
-    board.on(Input.EventType.TOUCH_END, (e: any) => this.onTouch(e, 'end'), this);
-    board.on(Input.EventType.TOUCH_CANCEL, (e: any) => this.onTouch(e, 'end'), this);
+    /* 触摸 + 鼠标双路径监听（桌面浏览器无触摸设备，只有 MOUSE_*；移动端走 TOUCH_*）。
+     * dedup：同相位 100ms 内的双输入（触摸+鼠标对同一手势各报一次）只处理一次。 */
+    const bind = (evt: Input.EventType, phase: 'start' | 'move' | 'end') =>
+      board.on(evt, (e: any) => { if (!this.dedup(phase)) this.onTouch(e, phase); }, this);
+    bind(Input.EventType.TOUCH_START, 'start');
+    bind(Input.EventType.TOUCH_MOVE, 'move');
+    bind(Input.EventType.TOUCH_END, 'end');
+    bind(Input.EventType.TOUCH_CANCEL, 'end');
+    bind(Input.EventType.MOUSE_DOWN, 'start');
+    bind(Input.EventType.MOUSE_MOVE, 'move');
+    bind(Input.EventType.MOUSE_UP, 'end');
+    bind(Input.EventType.MOUSE_LEAVE, 'end');
     this.refreshInfo();
     this.pageFadeIn();
   }
@@ -519,6 +528,15 @@ export class Boot extends Component {
     const r = Math.floor((this.boardPx / 2 - y) / this.cellPx);
     if (r < 0 || r >= n || c < 0 || c >= n) return -1;
     return r * n + c;
+  }
+
+  /* 双输入去重：同一物理手势 TOUCH/MOUSE 各报一次，start/end 相位 120ms 内只认第一个 */
+  private dedup(phase: 'start' | 'move' | 'end'): boolean {
+    if (phase === 'move') return false;
+    const now = Date.now();
+    if (this.lastInput.phase === phase && now - this.lastInput.t < 120) return true;
+    this.lastInput = { t: now, phase };
+    return false;
   }
 
   private onTouch(e: any, phase: 'start' | 'move' | 'end') {
@@ -536,8 +554,13 @@ export class Boot extends Component {
       }
     } else if (phase === 'move') {
       if (!this.gesture) return;
-      if (i >= 0 && i !== this.gesture.i) this.gesture.moved = true;
-      if (this.gesture.moved && i >= 0 && !this.sysState.has(i) && !this.manualX.has(i)) {
+      if (i < 0 || this.sysState.has(i)) return;
+      if (i !== this.gesture.i) this.gesture.moved = true;
+      if (!this.gesture.moved) return;
+      if (this.gesture.tapOff) {
+        /* 反选拖动：从已有 ✕ 起拖，划过的 ✕ 逐一取消（系统标记已被上方拦截） */
+        if (this.manualX.has(i)) { this.manualX.delete(i); this.clearX(i, true); this.play('tick'); }
+      } else if (!this.manualX.has(i)) {
         this.manualX.add(i); this.markX(i, true); this.play('tick');
       }
     } else {
@@ -776,7 +799,7 @@ export class Boot extends Component {
     const card = this.cardShell(mask, Math.min(460, W - 40), 300);
     const isFinale = this.level.id === LEVELS[LEVELS.length - 1].id;
     for (let k = 0; k < 3; k++) {
-      const st = this.makeSprite(k < stars ? 'icon_star' : 'icon_star_empty', 44, 44, undefined, k < stars ? GOLD : undefined);
+      const st = this.makeSprite(k < stars ? 'icon_star' : 'icon_star_empty', 44, 44, undefined, k < stars ? GOLD : '#d8d0c4');
       if (st) {
         st.setPosition((k - 1) * 58, 88, 0);
         st.setScale(0, 0, 1);
@@ -1145,17 +1168,17 @@ export class Boot extends Component {
     const { width: W } = this.viewSize();
     const mask = this.makeMask(infoOnly);   /* 信息类弹窗可点遮罩关闭 */
     const card = this.cardShell(mask, Math.min(460, W - 40), 380);
-    /* 头像：能用自家猫就用，emoji 只做兜底 */
-    const av = this.makeSprite('cat_idle', 76, 84);
-    if (av) { av.setPosition(0, 122, 0); card.addChild(av); }
+    /* 头像：能用自家猫就用，emoji 只做兜底（上移避开标题） */
+    const av = this.makeSprite('cat_idle', 72, 80);
+    if (av) { av.setPosition(0, 134, 0); card.addChild(av); }
     else {
       const bigLb = this.makeLabel(big, 48, INK); bigLb.node.setPosition(0, 122, 0); card.addChild(bigLb.node);
     }
     /* 标题：艺术字贴图优先 */
     const tImg = titleImg ? this.makeSprite(titleImg, title.length > 4 ? 300 : 180, title.length > 4 ? 50 : 49) : null;
-    if (tImg) { tImg.setPosition(0, 62, 0); card.addChild(tImg); }
+    if (tImg) { tImg.setPosition(0, 56, 0); card.addChild(tImg); }
     else {
-      const t = this.makeLabel(title, 26, INK); t.node.setPosition(0, 64, 0); card.addChild(t.node);
+      const t = this.makeLabel(title, 26, INK); t.node.setPosition(0, 58, 0); card.addChild(t.node);
     }
     const b = this.makeLabel(body, 17, SUB);
     b.lineHeight = 24;
