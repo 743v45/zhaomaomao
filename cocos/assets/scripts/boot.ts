@@ -18,9 +18,11 @@ interface Cell { node: Node; xIcon: Node | null; hl: Node | null; r: number; c: 
 interface SaveData { won: Record<string, number>; sound: boolean; music: boolean; rules: boolean; page: number; }
 
 const SAVE_KEY = 'zmm_cocos_v1';
-const IMG = ['btn_primary', 'btn_primary_pressed', 'btn_accent', 'btn_accent_pressed', 'btn_round',
+const IMG = ['btn_normal', 'btn_pressed', 'btn_accent', 'btn_accent_pressed', 'btn_round',
   'icon_star', 'icon_star_empty', 'icon_cross', 'icon_back', 'icon_reset', 'icon_gear',
-  'icon_sound_on', 'icon_sound_off', 'cat_idle', 'bg_paw'];
+  'icon_sound_on', 'icon_sound_off', 'cat_idle', 'bg_paw',
+  'logo', 'title_win', 'title_rules', 'title_settings', 'title_fail',
+  'lock', 'capsule', 'infobar', 'cat_v2', 'cat_v3', 'cat_v4'];
 const CAT_STATES = ['cat_idle', 'cat_happy', 'cat_hurt', 'cat_dead'];
 const SFX = ['click', 'tick', 'place', 'error', 'hint', 'star', 'win', 'lose', 'meow', 'toggle', 'bgm'];
 
@@ -202,19 +204,25 @@ export class Boot extends Component {
     const W = this.viewSize().width;
     const H = this.viewSize().height;
 
-    /* 标题 + 吉祥物 */
-    const titleRow = this.uiNode('title'); titleRow.setPosition(0, H / 2 - 74, 0); this.root.addChild(titleRow);
-    const catIcon = this.makeSprite('cat_idle', 40, 44);
-    if (catIcon) {
-      catIcon.setPosition(-86, 2, 0);
-      titleRow.addChild(catIcon);
-      tween(catIcon).repeatForever(tween(catIcon)
-        .to(1.2, { angle: 6 }, { easing: 'sineInOut' })
-        .to(1.2, { angle: -6 }, { easing: 'sineInOut' })).start();
+    /* 标题 Logo（艺术字贴图，缺图回退文字版） */
+    const logo = this.makeSprite('logo', 264, 124);
+    if (logo) {
+      logo.setPosition(0, H / 2 - 82, 0);
+      this.root.addChild(logo);
+    } else {
+      const titleRow = this.uiNode('title'); titleRow.setPosition(0, H / 2 - 74, 0); this.root.addChild(titleRow);
+      const catIcon = this.makeSprite('cat_idle', 40, 44);
+      if (catIcon) {
+        catIcon.setPosition(-86, 2, 0);
+        titleRow.addChild(catIcon);
+        tween(catIcon).repeatForever(tween(catIcon)
+          .to(1.2, { angle: 6 }, { easing: 'sineInOut' })
+          .to(1.2, { angle: -6 }, { easing: 'sineInOut' })).start();
+      }
+      const label = this.makeLabel('猫棋', 46, INK); label.node.setPosition(-16, 0, 0); titleRow.addChild(label.node);
     }
-    const label = this.makeLabel('猫棋', 46, INK); label.node.setPosition(-16, 0, 0); titleRow.addChild(label.node);
     const sub = this.makeLabel('每种颜色住一只猫 · 双击猜猫，猜错 2 次就输', 20, SUB);
-    sub.node.setPosition(0, H / 2 - 114, 0);
+    sub.node.setPosition(0, H / 2 - 162, 0);
     this.root.addChild(sub.node);
 
     /* 右上角：玩法 / 设置（贴图圆钮，无 emoji） */
@@ -228,11 +236,11 @@ export class Boot extends Component {
     /* 总进度（通关 X/100 · ★ Y/300）+ 继续按钮 */
     const total = LEVELS.length, won = this.wonCount(), stars = this.totalStars();
     const prog = this.makeLabel(`已通关 ${won}/${total} · ★ ${stars}/${total * 3}`, 18, SUB);
-    prog.node.setPosition(0, H / 2 - 150, 0);
+    prog.node.setPosition(0, H / 2 - 202, 0);
     this.root.addChild(prog.node);
     const next = this.firstUnfinished();
     if (next) {
-      const cont = this.makeButton(`继续 · 第 ${next.id} 关`, new Vec3(0, H / 2 - 196, 0), () => this.enterLevel(next.id), { accent: true, w: 220 });
+      const cont = this.makeButton(`继续 · 第 ${next.id} 关`, new Vec3(0, H / 2 - 250, 0), () => this.enterLevel(next.id), { accent: true, w: 220 });
       this.root.addChild(cont);
     }
 
@@ -241,7 +249,7 @@ export class Boot extends Component {
     this.page = Math.max(0, Math.min(this.save.page || 0, pages - 1));
     const from = this.page * perPage;
     const items = LEVELS.slice(from, from + perPage);
-    const gridTop = H / 2 - 250;
+    const gridTop = H / 2 - 300;
     const cardW = (W - 60 - 4 * 12) / 5, cardH = 108;
     items.forEach((lv: Level, idx: number) => {
       const row = Math.floor(idx / 5), col = idx % 5;
@@ -295,16 +303,27 @@ export class Boot extends Component {
     const no = this.makeLabel(String(lv.id), 30, unlocked ? INK : FAINT); no.node.setPosition(0, 26, 0); n.addChild(no.node);
     const nm = this.makeLabel(lv.name, 14, unlocked ? SUB : FAINT); nm.node.setPosition(0, 0, 0); n.addChild(nm.node);
     const df = this.makeLabel('难度 ' + lv.difficulty, 14, unlocked ? SUB : FAINT); df.node.setPosition(0, -24, 0); n.addChild(df.node);
-    /* 难度条（对数感：/50 封顶） */
+    /* 难度条（胶囊底 + /50 封顶） */
     const barW = w - 24;
-    const bar = this.uiNode('bar'); bar.addComponent(UITransform).setContentSize(barW, 8); bar.setPosition(0, -h / 2 + 14, 0); n.addChild(bar);
-    const bg = bar.addComponent(Graphics); bg.fillColor = new Color(240, 228, 210, 255); bg.roundRect(-barW / 2, -4, barW, 8, 4); bg.fill();
     const ratio = Math.min(1, lv.difficulty / 50);
-    const fgN = this.uiNode('fg'); fgN.addComponent(UITransform).setContentSize(barW * ratio, 8); fgN.setPosition(-barW / 2 + barW * ratio / 2, 0, 0); bar.addChild(fgN);
-    const fg = fgN.addComponent(Graphics); fg.fillColor = new Color(255, 139, 94, 255); fg.roundRect(-barW * ratio / 2, -4, barW * ratio, 8, 4); fg.fill();
+    const cap = this.makeSprite('capsule', barW, 12, 'cap-' + lv.id);
+    if (cap) {
+      cap.setPosition(0, -h / 2 + 14, 0);
+      n.addChild(cap);
+      const fw = Math.max(6, (barW - 8) * ratio);
+      const fgN = this.uiNode('fg'); fgN.addComponent(UITransform).setContentSize(fw, 6); fgN.setPosition(-(barW - 8) / 2 + fw / 2, 0, 0); cap.addChild(fgN);
+      const fg = fgN.addComponent(Graphics); fg.fillColor = new Color(255, 139, 94, 255); fg.roundRect(-fw / 2, -3, fw, 6, 3); fg.fill();
+    } else {
+      const bar = this.uiNode('bar'); bar.addComponent(UITransform).setContentSize(barW, 8); bar.setPosition(0, -h / 2 + 14, 0); n.addChild(bar);
+      const bg = bar.addComponent(Graphics); bg.fillColor = new Color(240, 228, 210, 255); bg.roundRect(-barW / 2, -4, barW, 8, 4); bg.fill();
+      const fgN = this.uiNode('fg'); fgN.addComponent(UITransform).setContentSize(barW * ratio, 8); fgN.setPosition(-barW / 2 + barW * ratio / 2, 0, 0); bar.addChild(fgN);
+      const fg = fgN.addComponent(Graphics); fg.fillColor = new Color(255, 139, 94, 255); fg.roundRect(-barW * ratio / 2, -4, barW * ratio, 8, 4); fg.fill();
+    }
     /* 锁 / 星级 */
     if (!unlocked) {
-      const lock = this.makeLabel('🔒', 20, SUB); lock.node.setPosition(w / 2 - 18, h / 2 - 18, 0); n.addChild(lock.node);
+      const lk = this.makeSprite('lock', 20, 22);
+      if (lk) { lk.setPosition(w / 2 - 18, h / 2 - 18, 0); n.addChild(lk); }
+      else { const lock = this.makeLabel('🔒', 20, SUB); lock.node.setPosition(w / 2 - 18, h / 2 - 18, 0); n.addChild(lock.node); }
     } else {
       const stars = this.save.won[String(lv.id)] || 0;
       for (let k = 0; k < 3; k++) {
@@ -341,6 +360,8 @@ export class Boot extends Component {
 
     this.infoLabel = this.makeLabel('', 19, '#8a7560');
     this.infoLabel.node.setPosition(0, H / 2 - 40, 0);
+    const ib = this.makeSprite('infobar', Math.min(W - 40, 520), 54);
+    if (ib) { ib.setPosition(0, H / 2 - 40, 0); this.root.addChild(ib); }
     this.root.addChild(this.infoLabel.node);
     /* 猜错计数（两枚叉图标：淡=剩余机会，红=已用） */
     this.failIcons = [];
@@ -552,6 +573,11 @@ export class Boot extends Component {
     cell.node.addChild(shadow);
     const cat = this.makeSprite('cat_idle', this.cellPx * 0.8, this.cellPx * 0.8, 'cat');
     if (cat) {
+      /* 按区块序号分配毛色变体，告别六胞胎 */
+      const variants = ['cat_idle', 'cat_v2', 'cat_v3', 'cat_v4'];
+      const vsp = cat.getComponent(Sprite) as Sprite;
+      const vImg = this.sf(variants[this.level.regions[i] % variants.length]);
+      if (vsp && vImg) vsp.spriteFrame = vImg;
       cat.setPosition(0, this.cellPx * 0.04, 0);
       cell.node.addChild(cat);
       return cat;
@@ -653,7 +679,11 @@ export class Boot extends Component {
           .call(() => { if (k < stars) { this.play('star'); if (k === 2 && stars === 3) this.play('meow'); } }).start();
       }
     }
-    const t = this.makeLabel(isFinale ? '猫都全部通关！' : '找到全部猫咪！', 30, INK); t.node.setPosition(0, 30, 0); card.addChild(t.node);
+    const tw = this.makeSprite('title_win', 320, 53);
+    if (tw) { tw.setPosition(0, 28, 0); card.addChild(tw); }
+    else {
+      const t = this.makeLabel(isFinale ? '猫都全部通关！' : '找到全部猫咪！', 30, INK); t.node.setPosition(0, 30, 0); card.addChild(t.node);
+    }
     const b = this.makeLabel(isFinale
       ? `总星数 ${this.totalStars()}/${LEVELS.length * 3} · 感谢陪猫到最后`
       : '难度 ' + this.level.difficulty + ' · 猜错 ' + this.fails + '/2 · 提示 ' + this.hints + ' 次', 18, SUB);
@@ -675,7 +705,11 @@ export class Boot extends Component {
     const card = this.cardShell(mask, Math.min(460, W - 40), 320);
     const av = this.makeSprite('cat_hurt', 84, 92) || this.makeSprite('cat_idle', 84, 92);
     if (av) { av.setPosition(0, 96, 0); av.angle = 8; card.addChild(av); }
-    const t = this.makeLabel('猜错 2 次，这局输了', 28, INK); t.node.setPosition(0, 22, 0); card.addChild(t.node);
+    const tf = this.makeSprite('title_fail', 320, 53);
+    if (tf) { tf.setPosition(0, 20, 0); card.addChild(tf); }
+    else {
+      const t = this.makeLabel('猜错 2 次，这局输了', 28, INK); t.node.setPosition(0, 22, 0); card.addChild(t.node);
+    }
     const b = this.makeLabel('先用 ✕ 标出没有猫的格子，善用提示再来', 18, SUB);
     b.node.setPosition(0, -14, 0); card.addChild(b.node);
     card.addChild(this.makeButton('再试一次', new Vec3(0, -84, 0), () => { this.dismissMask(mask); this.enterLevel(this.level.id); }, { accent: true }));
@@ -751,7 +785,7 @@ export class Boot extends Component {
       '· 点一下格子：标 ✕（这里没有猫）\n' +
       '· 再点一下取消；按住拖动连着标\n' +
       '· 双击：猜猫在这！猜错 2 次就输\n' +
-      '· 卡住了就点「提示」', () => { after(); }, '知道了', true);
+      '· 卡住了就点「提示」', () => { after(); }, '知道了', true, 'title_rules');
   }
 
   private showSettings() {
@@ -872,13 +906,12 @@ export class Boot extends Component {
     const w = opts.w || 128, h = 44;
     const n = this.uiNode('btn');
     n.addComponent(UITransform).setContentSize(w, h);
-    const normal = this.sf(opts.accent ? 'btn_accent' : 'btn_primary');
-    const pressed = this.sf(opts.accent ? 'btn_accent_pressed' : 'btn_primary_pressed');
+    const normal = this.sf('btn_normal');
+    const pressed = this.sf('btn_pressed');
     const sp = n.addComponent(Sprite);
     if (normal) {
       sp.type = Sprite.Type.SIMPLE; sp.sizeMode = Sprite.SizeMode.CUSTOM;
       sp.spriteFrame = normal;
-      if (!opts.accent) sp.color = new Color(255, 236, 210, 255);   /* 冷灰底 → 暖奶油，与卡片同一色系 */
     } else {
       const g = n.addComponent(Graphics);
       g.fillColor = opts.accent ? new Color(255, 157, 104, 255) : new Color(255, 255, 255, 255);
@@ -955,19 +988,24 @@ export class Boot extends Component {
     if (mop) tween(mop).to(0.15, { opacity: 0 }).call(() => mask.destroy()).start();
     else mask.destroy();
   }
-  /* 弹窗卡片工厂：阴影垫底 + 白卡，三弹窗共用 */
+  /* 弹窗卡片工厂：panel 贴图自带落影（缺图回退 Graphics 白卡+影子） */
   private cardShell(mask: Node, cw: number, ch: number): Node {
     const card = this.uiNode('card-shell');
     card.addComponent(UITransform).setContentSize(cw, ch);
-    const cg = card.addComponent(Graphics);
-    cg.fillColor = new Color(60, 46, 32, 60);
-    cg.roundRect(-cw / 2 - 6, -ch / 2 - 8, cw + 12, ch, 18); cg.fill();   /* 落影 */
-    cg.fillColor = new Color(255, 255, 255, 255);
-    cg.roundRect(-cw / 2, -ch / 2, cw, ch, 16); cg.fill();
+    const p = this.makeSprite('panel', cw + 22, ch + 30);
+    if (p) {
+      card.addChild(p);
+    } else {
+      const cg = card.addComponent(Graphics);
+      cg.fillColor = new Color(60, 46, 32, 60);
+      cg.roundRect(-cw / 2 - 6, -ch / 2 - 8, cw + 12, ch, 18); cg.fill();
+      cg.fillColor = new Color(255, 255, 255, 255);
+      cg.roundRect(-cw / 2, -ch / 2, cw, ch, 16); cg.fill();
+    }
     mask.addChild(card);
     return card;
   }
-  private showOverlay(big: string, title: string, body: string, cb: () => void, btnText: string, infoOnly = false) {
+  private showOverlay(big: string, title: string, body: string, cb: () => void, btnText: string, infoOnly = false, titleImg?: string) {
     const { width: W } = this.viewSize();
     const mask = this.makeMask(infoOnly);   /* 信息类弹窗可点遮罩关闭 */
     const card = this.cardShell(mask, Math.min(460, W - 40), 380);
@@ -977,7 +1015,12 @@ export class Boot extends Component {
     else {
       const bigLb = this.makeLabel(big, 48, INK); bigLb.node.setPosition(0, 122, 0); card.addChild(bigLb.node);
     }
-    const t = this.makeLabel(title, 26, INK); t.node.setPosition(0, 64, 0); card.addChild(t.node);
+    /* 标题：艺术字贴图优先 */
+    const tImg = titleImg ? this.makeSprite(titleImg, title.length > 4 ? 300 : 180, title.length > 4 ? 50 : 49) : null;
+    if (tImg) { tImg.setPosition(0, 62, 0); card.addChild(tImg); }
+    else {
+      const t = this.makeLabel(title, 26, INK); t.node.setPosition(0, 64, 0); card.addChild(t.node);
+    }
     const b = this.makeLabel(body, 17, SUB);
     b.lineHeight = 24;
     b.overflow = Label.Overflow.SHRINK;
