@@ -26,7 +26,7 @@ const IMG = ['btn_normal', 'btn_pressed', 'btn_accent', 'btn_accent_pressed', 'b
   'cloud_1', 'cloud_2', 'cloud_3', 'prop_yarn', 'prop_fish', 'prop_milk', 'confetti_sheet',
   'banner_xiaoyuan', 'banner_jiequ', 'banner_gongyuan', 'banner_jieshi', 'banner_maodu',
   'tile_white', 'tile_depth', 'hl_gold', 'ring_gold', 'flash_red',
-  'card_level', 'toast_dark', 'shadow_cat', 'row_setting'];
+  'card_level', 'toast_dark', 'shadow_cat', 'row_setting', 'mark_x'];
 
 /* 柔和化 24 色板（CIELab 降饱和提亮，区分度硬约束 ≥90%），与引擎 PALETTE 同序 */
 const SOFT_PALETTE = ['#F7CAD5', '#FDE592', '#BDE7B5', '#B4D8F5', '#DBC7EF', '#F9C895', '#A6DAD6', '#F5AFA6', '#C7E997', '#A3C8E8', '#F8E8B8', '#D8E9CB', '#EAC7B9', '#C9CBEF', '#F3B782', '#AEE1C9', '#F2B4CC', '#E9DFB9', '#BDCFE0', '#E4CADE', '#FCD6B4', '#D2E9DC', '#E9D3F1', '#F9E4CB'];
@@ -606,18 +606,17 @@ export class Boot extends Component {
   }
 
   /* ============ 惰性渲染件 ============ */
-  private markX(i: number, manual: boolean) {    /* ✕ 标记：笔记=暖灰 / 系统判错=红，缩放入场（icon 惰性创建） */
+  private markX(i: number, manual: boolean) {    /* ✕ 标记：白色圆头贴图（笔记=白 / 系统判错=红），加大不歪，缩放入场 */
     const cell = this.cells[i];
     if (!cell.xIcon) {
-      cell.xIcon = this.makeSprite('icon_cross', Math.floor(this.cellPx * 0.42), Math.floor(this.cellPx * 0.42), 'x-icon');
+      cell.xIcon = this.makeSprite('mark_x', Math.floor(this.cellPx * 0.52), Math.floor(this.cellPx * 0.52), 'x-icon');
       if (cell.xIcon) cell.node.addChild(cell.xIcon);
     }
     if (cell.xIcon) {
       const sp = cell.xIcon.getComponent(Sprite) as Sprite;
-      sp.color = manual ? new Color(122, 108, 92, 255) : new Color(217, 95, 67, 255);
+      sp.color = manual ? new Color(255, 255, 255, 255) : new Color(229, 83, 60, 255);
       cell.xIcon.active = true;
       cell.xIcon.setScale(0.2, 0.2, 1);
-      cell.xIcon.angle = manual ? -8 : 8;
       tween(cell.xIcon).to(0.16, { scale: new Vec3(1, 1, 1) }, { easing: 'backOut' }).start();
     }
   }
@@ -937,8 +936,8 @@ export class Boot extends Component {
   private showSettings() {
     const { width: W } = this.viewSize();
     const mask = this.makeMask(false);
-    const card = this.cardShell(mask, Math.min(420, W - 40), 380);
-    const t = this.makeLabel('设置', 30, INK); t.node.setPosition(0, 132, 0); card.addChild(t.node);
+    const card = this.cardShell(mask, Math.min(420, W - 40), 470);
+    const t = this.makeLabel('设置', 30, INK); t.node.setPosition(0, 178, 0); card.addChild(t.node);
     const rowBtns: Node[] = [];
     const mkRow = (y: number): Node => {
       const row = this.uiNode('row'); row.addComponent(UITransform).setContentSize(360, 52); row.setPosition(0, y, 0); card.addChild(row);
@@ -952,7 +951,7 @@ export class Boot extends Component {
       return row;
     };
     /* 音效 */
-    const sndRow = mkRow(56);
+    const sndRow = mkRow(112);
     const redrawSnd = () => {
       sndRow.removeAllChildren();
       const icon = this.makeSprite(this.save.sound ? 'icon_sound_on' : 'icon_sound_off', 28, 28);
@@ -963,7 +962,7 @@ export class Boot extends Component {
     redrawSnd();
     sndRow.on(Input.EventType.TOUCH_END, () => { this.save.sound = !this.save.sound; this.persist(); redrawSnd(); this.play('toggle'); });
     /* 音乐 */
-    const musRow = mkRow(-8);
+    const musRow = mkRow(36);
     const redrawMus = () => {
       musRow.removeAllChildren();
       const icon = this.makeSprite(this.save.music ? 'icon_sound_on' : 'icon_sound_off', 28, 28);
@@ -978,13 +977,13 @@ export class Boot extends Component {
       this.play('toggle');
     });
     /* 玩法 */
-    const ruleRow = mkRow(-72);
+    const ruleRow = mkRow(-40);
     const rlb = this.makeLabel('怎么玩（随时回看）', 21, '#6b5b4e'); rlb.node.setPosition(0, 0, 0); ruleRow.addChild(rlb.node);
     ruleRow.on(Input.EventType.TOUCH_END, () => { this.play('click'); this.dismissMask(mask); this.showRules(() => { }); });
     /* 重置进度（两步确认，5s 超时回退） */
     let armed = false;
     let disarmTimer: number | null = null;
-    const rstRow = mkRow(-136);
+    const rstRow = mkRow(-116);
     const redrawRst = () => {
       rstRow.removeAllChildren();
       if (armed) {
@@ -1020,8 +1019,8 @@ export class Boot extends Component {
     });
     /* 关于 */
     const about = this.makeLabel('猫棋 1.0 · Kenney(CC0) · OpenGameArt(CC0) · AI', 15, FAINT);
-    about.node.setPosition(0, -156, 0); card.addChild(about.node);
-    card.addChild(this.makeButton('关闭', new Vec3(0, -95 - 55, 0), () => this.dismissMask(mask), { accent: true }));
+    about.node.setPosition(0, -178, 0); card.addChild(about.node);
+    card.addChild(this.makeButton('关闭', new Vec3(0, -196, 0), () => this.dismissMask(mask), { accent: true }));
     card.setScale(0.6, 0.6, 1);
     tween(card).to(0.26, { scale: new Vec3(1, 1, 1) }, { easing: 'backOut' }).start();
   }

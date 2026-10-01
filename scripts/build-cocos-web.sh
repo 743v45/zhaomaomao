@@ -8,6 +8,7 @@ python3 scripts/fix-img-meta.py
 STAMP=$(mktemp); touch "$STAMP"
 "$CC_BIN" --project "$PWD/cocos" --build "platform=web-mobile;debug=false" > /tmp/zmm-web-build.log 2>&1 || echo "⚠ CLI 脏退出码，以产物新鲜度为准"
 find cocos/build/web-mobile/index.html -newer "$STAMP" | grep -q . || { echo "✗ 构建失败"; tail -20 /tmp/zmm-web-build.log; exit 1; }
+
 OUT2=$(python3 scripts/fix-img-meta.py)
 echo "$OUT2"
 case "$OUT2" in *"修正 0"*) echo "✓ web-mobile 构建完成（无需二次构建）";; *)

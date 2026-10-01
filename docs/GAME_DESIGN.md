@@ -112,4 +112,5 @@ engine/cli.js         # gen / gen-batch / validate / docs / index / trace / buil
 - 定位：动画体验版（猫落地弹跳/判错红闪/彩纸/星级弹入），原生小程序版冻结，web 版保持极简。
 - 素材：Kenney UI/背景/音效（CC0）+ AI 生成猫（卡通 Q 版，标准见 docs/ASSET_STANDARD.md：一票否决门 + ≥9 打分表）；猫四态缺图时自动降级为变形动画+表情标记。
 - 进度：通关存档（星级 3=零猜错零提示）+ 顺序解锁；设置页（音效/重置）；首次启动规则页。
-- 流水线：`npm run build-cocos`（引擎/数据同步）→ `build-cocos-web` / `build-cocos-wx`（微信引擎分离，主包≤4MB）→ `cocos-smoke`（headless 驱动 __zmmCocos 验收+截图）。
+- 流水线：`npm run build-cocos`（引擎/数据同步）→ `build-cocos-web` / `build-cocos-wx`（微信引擎分离，主包≤4MB）→ `cocos-smoke`（headless 驱动 __zmmCocos 验收+截图）→ `node scripts/e2e-full.mjs`（真实坐标鼠标 E2E：TC1~TC7 全流程+操作日志+过程截图）。
+- 已知限制：桌面浏览器**极端宽高比窗口**（接近方形，如 900×855）下 FIXED_HEIGHT 视野宽随窗口增长，棋盘点击命中与视觉位置存在偏差——主战场手机竖屏（0.46~0.56 比例，微信竖屏锁定）与 DevTools 手机模拟不受影响；E2E 以 880×1600 手机视口为准。
